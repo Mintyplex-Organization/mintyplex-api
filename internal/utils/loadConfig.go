@@ -18,17 +18,22 @@ type Config struct {
 	RefreshTokenExpiresIn  time.Duration `mapstructure:"REFRESH_TOKEN_EXPIRED_IN"`
 	AccessTokenMaxAge      int           `mapstructure:"ACCESS_TOKEN_MAXAGE"`
 	RefreshTokenMaxAge     int           `mapstructure:"REFRESH_TOKEN_MAXAGE"`
+
+	CloudName        string `mapstructure:"CLOUD_NAME"`
+	CloudinaryKey    string `mapstructure:"CLOUDINARY_KEY"`
+	CloudinarySecret string `mapstructure:"CLOUDINARY_SECRET"`
+	CloudinaryUri    string `mapstructure:"CLOUDINARY_URI"`
 }
 
 func LoadConfig(path string) (config Config, err error) {
-	viper.AddConfigPath("path")
+	viper.AddConfigPath(path)
 	viper.SetConfigType("env")
 	viper.SetConfigName("app")
 
 	viper.AutomaticEnv()
 
 	err = viper.ReadInConfig()
-	if err != nil{
+	if err != nil {
 		return
 	}
 

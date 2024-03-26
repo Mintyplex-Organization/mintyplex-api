@@ -6,6 +6,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
+
 type SignUpReq struct {
 	Name            string `json:"name" bson:"name" binding:"required"`
 	Email           string
