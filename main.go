@@ -15,14 +15,13 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.mongodb.org/mongo-driver/mongo/readpref"
-	"github.com/go-redis/redis/v8"
 )
 
 var (
 	server      *gin.Engine
 	ctx         context.Context
 	mongoclient *mongo.Client
-	redisclient *redis.Client
+	// redisclient *redis.Client
 
 	UserRepository      repository.UserRepository
 	UserController      controllers.UserController
@@ -41,7 +40,24 @@ func init() {
 	}
 	fmt.Println("loaded..next")
 
-	ctx = context.TODO()
+	// uri := config.DBUri
+	// if uri == "" {
+	// 	log.Fatal("Set MONGODB_URI")
+	// }
+
+	// client, err := mongo.Connect(context.TODO(), options.Client().ApplyURI(uri))
+	// if err != nil {
+	// 	panic(err)
+	// }
+	// mongoclient = client
+
+	// defer func() {
+	// 	if err := client.Disconnect(context.TODO()); err != nil {
+	// 		panic(err)
+	// 	}
+	// }()
+
+	// ctx = context.TODO()
 	fmt.Println(ctx, "ctx reached")
 
 	// Connect to MongoDB
