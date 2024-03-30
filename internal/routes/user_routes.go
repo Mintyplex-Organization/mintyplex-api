@@ -4,7 +4,6 @@ import (
 	"mintyplex-api/internal/controllers"
 	"mintyplex-api/internal/middleware"
 	"mintyplex-api/internal/repository"
-	"mintyplex-api/internal/utils"
 
 	"github.com/gin-gonic/gin"
 )
@@ -22,5 +21,9 @@ func (uc *UserRouteController) UserRoute(rg *gin.RouterGroup, UserRepository rep
 	router := rg.Group("users")
 	router.Use(middleware.DeserializeUser(UserRepository))
 	router.GET("/myprofile", uc.userController.GetMe)
-	router.POST("/:id/uploadimage", utils.ImageUploadMiddleware(), uc.userController.AddImage)
+	// router.POST("/:id/uploadimage", utils.ImageUploadMiddleware(), uc.userController.AddImage)
+
+	router.POST("/avatar", uc.userController.UploadAvatar)
+	// router.PUT("/avatar/:name", uc.userController.UpdateAvatar)
+
 }

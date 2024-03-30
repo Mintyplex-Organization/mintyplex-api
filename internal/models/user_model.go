@@ -27,7 +27,7 @@ type ReqResponse struct {
 	Email           string             `json:"email" bson:"email"`
 	Password        string             `json:"password" bson:"password"`
 	PasswordConfirm string             `json:"passwordConfirm,omitempty" bson:"passwordConfirm,omitempty"`
-	ImageUrl        string    `json:"imageUrl" bson:"imageUrl"`
+	ImageUrl        string             `json:"imageUrl" bson:"imageUrl"`
 	CreatedAt       time.Time          `json:"created_at" bson:"created_at"`
 	UpdatedAt       time.Time          `json:"updated_at" bson:"updated_at"`
 }
@@ -36,7 +36,7 @@ type UserResponse struct {
 	ID        primitive.ObjectID `json:"id,omitempty" bson:"_id,omitempty"`
 	Name      string             `json:"name,omitempty" bson:"name,omitempty"`
 	Email     string             `json:"email,omitempty" bson:"email,omitempty"`
-	ImageUrl        string    `json:"imageUrl" bson:"imageUrl"`
+	ImageUrl  string             `json:"imageUrl" bson:"imageUrl"`
 	CreatedAt time.Time          `json:"created_at" bson:"created_at"`
 	UpdatedAt time.Time          `json:"updated_at" bson:"updated_at"`
 }
@@ -46,7 +46,7 @@ func FilteredResponse(user *ReqResponse) UserResponse {
 		ID:        user.ID,
 		Email:     user.Email,
 		Name:      user.Name,
-		ImageUrl: user.ImageUrl,
+		ImageUrl:  user.ImageUrl,
 		CreatedAt: user.CreatedAt,
 		UpdatedAt: user.UpdatedAt,
 	}
