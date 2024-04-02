@@ -34,27 +34,28 @@ AVATAR_COLLECTION="avatars.files"
 this route takes the user's id as a parameter. e.g https://mintyplex-api.onrender.com/api/v1/user/profile/660c3aafe22f82232121bbd9
 
 response example
-{
-  "error": false,
-  "message": "User Profile",
-  "user": {
-    "id": "660c3aafe22f82232121bbd9",
-    "wallet_address": "xion186n0xxs96rzvnrc8ld66zkywc54xvta0mc5ewx5yvx8tde4xvals8xxekr",
-    "email": "seanP@gmail.com",
-    "avatar": "/api/v1/user/avatar/",
-    "bio": "i love crypto",
-    "x_link": "x.com/seanP",
-    "created_at": 1712077487,
-    "updated_at": 1712077487
-  }
-}
+        {
+        "error": false,
+        "message": "User Profile",
+        "user": {
+            "id": "660c3aafe22f82232121bbd9",
+            "wallet_address": "xion186n0xxs96rzvnrc8ld66zkywc54xvta0mc5ewx5yvx8tde4xvals8xxekr",
+            "email": "seanP@gmail.com",
+            "avatar": "/api/v1/user/avatar/",
+            "bio": "i love crypto",
+            "x_link": "x.com/seanP",
+            "created_at": 1712077487,
+            "updated_at": 1712077487
+             }
+        }
 
 ### edit a user profile - `PUT`
     https://mintyplex-api.onrender.com/api/v1/user/profile/:id
 this route enables users to edit already existing information
 request example- 
-{
-    "email": "seanP@gmail.com",
-    "bio": "i love crypto",
-    "x_link": "x.com/seanP",
-}
+
+    {
+            "email": "seanP@gmail.com",
+            "bio": "i love crypto",
+            "x_link": "x.com/seanP",
+    }
