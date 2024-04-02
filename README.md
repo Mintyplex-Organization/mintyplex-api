@@ -34,7 +34,7 @@ AVATAR_COLLECTION="avatars.files"
 this route takes the user's id as a parameter. e.g https://mintyplex-api.onrender.com/api/v1/user/profile/660c3aafe22f82232121bbd9
 
 response example
-        {
+    {
         "error": false,
         "message": "User Profile",
         "user": {
@@ -46,8 +46,8 @@ response example
             "x_link": "x.com/seanP",
             "created_at": 1712077487,
             "updated_at": 1712077487
-             }
         }
+    }
 
 ### edit a user profile - `PUT`
     https://mintyplex-api.onrender.com/api/v1/user/profile/:id
