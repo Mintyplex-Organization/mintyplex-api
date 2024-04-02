@@ -12,7 +12,7 @@ func UserRoutes(app *fiber.App) {
 
 	route.Post("/profile", controllers.DoTier1)	
 	route.Get("/profile/:id", controllers.UserProfile)
-	// route.Put("/profile", middleware.Auth(), controllers.EditUser)
+	// route.Put("/profile", controllers.EditUser)
 	route.Post("/avatar", middleware.Auth(), controllers.UploadUserAvatar)
 	route.Get("/avatar", middleware.Auth(), controllers.GetUserAvatar)
 	route.Get("/avatar/:id", controllers.GetAvatarById)
