@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"bytes"
+	"fmt"
 	"io"
 	"log"
 	"mintyplex-api/internal/models"
@@ -19,160 +20,112 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-func UserSignUp(ctx *fiber.Ctx) error {
+func DoTier1(c *fiber.Ctx) error {
 	validate := validator.New()
-	signUp := new(models.SignUp)
-	ctx.BodyParser(&signUp)
+	dotier1 := new(models.DoTier1)
+	c.BodyParser(&dotier1)
 
-	if err := validate.Struct(signUp); err != nil {
-		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+	if err := validate.Struct(dotier1); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error":   true,
-			"message": err.Error(),
+			"message": "error while validating inputs, give it a second" + err.Error(),
 		})
 	}
 
-	passwdHash, err := utils.HashPassword(signUp.Password)
-	if err != nil {
-		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error":   true,
-			"message": err.Error(),
-		})
-	}
-
+	//perform tier1
 	user := &models.User{}
 	timeStamp := time.Now().Unix()
 
-	user.Email = signUp.Email
-	user.PasswordHash = passwdHash
+	user.WalletAddress = dotier1.WalletAddress
+	user.Email = dotier1.Email
+	user.XLink = dotier1.XLink
 	user.CreatedAt = timeStamp
 	user.UpdatedAt = timeStamp
 
 	if err := validate.Struct(user); err != nil {
-		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error":   true,
-			"message": err.Error(),
+			"message": "error perform tier 1 upgrade, give it a second" + err.Error(),
 		})
 	}
 
-	db := ctx.Locals("db").(*mongo.Database)
+	db := c.Locals("db").(*mongo.Database)
 
-	// Check if the user already exists
-	if err := db.Collection(os.Getenv("USER_COLLECTION")).FindOne(ctx.Context(), fiber.Map{"email": user.Email}).Decode(&user); err == nil {
-		return ctx.Status(fiber.StatusConflict).JSON(fiber.Map{
+	if err := db.Collection(os.Getenv("USER_COLLECTION")).FindOne(c.Context(), fiber.Map{"email": user.Email}).Decode(&user); err == nil {
+		return c.Status(fiber.StatusConflict).JSON(fiber.Map{
 			"error":   true,
-			"message": "User already exists",
+			"message": "this email has been used by you or someone else",
 		})
 	}
 
-	if _, err := db.Collection(os.Getenv("USER_COLLECTION")).InsertOne(ctx.Context(), user); err != nil {
-		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+	if _, err := db.Collection(os.Getenv("USER_COLLECTION")).InsertOne(c.Context(), user); err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error":   true,
-			"message": err.Error(),
+			"message": "error uploading, give it a second" + err.Error(),
 		})
 	}
 
-	return ctx.Status(fiber.StatusCreated).JSON(fiber.Map{
+	return c.Status(fiber.StatusCreated).JSON(fiber.Map{
 		"error":   false,
-		"message": "User created successfully",
+		"message": "successfully upgraded to Tier 1",
 	})
 }
 
-func UserSignIn(c *fiber.Ctx) error {
-	validate := validator.New()
-	signIn := new(models.SignIn)
-	c.BodyParser(&signIn)
+func UserProfile(c *fiber.Ctx) error {
+    // Commenting out the authentication check
+    // user := c.Locals("user").(*models.User)
 
-	if err := validate.Struct(signIn); err != nil {
+    id, err := primitive.ObjectIDFromHex(c.Params("id"))
+    if err != nil {
+        return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+            "error":   true,
+            "message": "Invalid User, give it a second",
+        })
+    }
+
+    foundUser := new(models.UserProfile)
+
+    db := c.Locals("db").(*mongo.Database)
+    if err := db.Collection(os.Getenv("USER_COLLECTION")).FindOne(c.Context(), fiber.Map{"_id": id}).Decode(&foundUser); err != nil {
+        return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+            "error":   true,
+            "message": "User not found, give it a second",
+        })
+    }
+	fmt.Println(foundUser.WalletAddress,foundUser.Email,foundUser.Bio)
+
+    return c.Status(fiber.StatusOK).JSON(fiber.Map{
+        "error":   false,
+        "message": "User Profile",
+        "user": models.UserProfile{
+            ID:            foundUser.ID, // Assuming foundUser is the correct variable here
+            WalletAddress: foundUser.WalletAddress,
+            Email:         foundUser.Email,
+            Avatar:        "/api/v1/user/avatar/" + foundUser.ID,
+            Bio:           foundUser.Bio,
+            XLink:         foundUser.XLink,
+            CreatedAt:     foundUser.CreatedAt,
+            UpdatedAt:     foundUser.UpdatedAt,
+        },
+		
+    })
+}
+
+
+func UploadUserAvatar(c *fiber.Ctx) error {
+	user := c.Locals("user").(*models.User)
+	db := c.Locals("db").(*mongo.Database)
+
+	fileHeader, err := c.FormFile("avatar")
+	if err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error":   true,
 			"message": err.Error(),
 		})
 	}
 
-	// Find the user
-	user := &models.User{}
-	db := c.Locals("db").(*mongo.Database)
-
-	if err := db.Collection(os.Getenv("USER_COLLECTION")).FindOne(c.Context(), fiber.Map{"email": signIn.Email}).Decode(&user); err != nil {
-		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-			"error":   true,
-			"message": "Incorrect email or password",
-		})
-	}
-
-	// Check if the password is correct
-	if match := utils.CheckPasswordHash(signIn.Password, user.PasswordHash); !match {
-		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-			"error":   true,
-			"message": "Incorrect email or password",
-		})
-	}
-
-	// Create a token
-	token, err := utils.GenerateNewToken(user.ID.Hex())
-	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error":   true,
-			"message": err.Error(),
-		})
-	}
-
-	// Save the token in the database
-	if _, err := db.Collection(os.Getenv("USER_COLLECTION")).UpdateOne(c.Context(), fiber.Map{"_id": user.ID}, fiber.Map{"$set": fiber.Map{"tokens": []string(append(user.Tokens, token.Access)), "updated_at": time.Now().Unix()}}); err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error":   true,
-			"message": err.Error(),
-		})
-	}
-
-	return c.Status(fiber.StatusOK).JSON(fiber.Map{
-		"error":   false,
-		"message": "User signed in successfully",
-		"tokens": fiber.Map{
-			"access": token.Access,
-		},
-	})
-}
-
-// func UsersSignOut(ctx *fiber.Ctx) error {
-
-// }
-
-// func UsersSignOutAll(ctx *fiber.Ctx) error {
-
-// }
-
-func UserProfile(ctx *fiber.Ctx) error {
-	user := ctx.Locals("user").(*models.User)
-
-	return ctx.Status(fiber.StatusOK).JSON(fiber.Map{
-		"error":   false,
-		"message": "User Profile",
-		"user": models.UserProfileResponse{
-			ID:        user.ID.Hex(),
-			Email:     user.Email,
-			Avatar:    "/api/v1/user/avatar/" + user.ID.Hex(),
-			CreatedAt: user.CreatedAt,
-			UpdatedAt: user.UpdatedAt,
-		},
-	})
-
-}
-
-func UploadUserAvatar(ctx *fiber.Ctx) error {
-	user := ctx.Locals("user").(*models.User)
-	db := ctx.Locals("db").(*mongo.Database)
-
-	fileHeader, err := ctx.FormFile("avatar")
-	if err != nil {
-		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error":   true,
-			"message": err.Error(),
-		})
-	}
-
 	if (fileHeader.Size) > 1024*1024 {
-		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error":   true,
 			"message": "File size too large, max 1MB allowed",
 		})
@@ -181,7 +134,7 @@ func UploadUserAvatar(ctx *fiber.Ctx) error {
 	fileExtension := strings.ToLower(fileHeader.Filename[strings.LastIndex(fileHeader.Filename, "."):])
 
 	if fileExtension != ".jpg" && fileExtension != ".jpeg" && fileExtension != ".png" {
-		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error":   true,
 			"message": "Invalid file type",
 		})
@@ -189,7 +142,7 @@ func UploadUserAvatar(ctx *fiber.Ctx) error {
 
 	file, err := fileHeader.Open()
 	if err != nil {
-		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error":   true,
 			"message": "Internal server error",
 		})
@@ -197,7 +150,7 @@ func UploadUserAvatar(ctx *fiber.Ctx) error {
 
 	content, err := io.ReadAll(file)
 	if err != nil {
-		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error":   true,
 			"message": "Internal server error",
 		})
@@ -205,7 +158,7 @@ func UploadUserAvatar(ctx *fiber.Ctx) error {
 
 	bucket, err := gridfs.NewBucket(db, options.GridFSBucket().SetName(os.Getenv("AVATAR_BUCKET")))
 	if err != nil {
-		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error":   true,
 			"message": "Internal server error",
 		})
@@ -213,10 +166,10 @@ func UploadUserAvatar(ctx *fiber.Ctx) error {
 
 	var avatarMetadata bson.M
 
-	if err := db.Collection(os.Getenv("AVATAR_COLLECTION")).FindOne(ctx.Context(), fiber.Map{"metadata.user_id": user.ID}).Decode(&avatarMetadata); err == nil {
+	if err := db.Collection(os.Getenv("AVATAR_COLLECTION")).FindOne(c.Context(), fiber.Map{"metadata.user_id": user.ID}).Decode(&avatarMetadata); err == nil {
 		// Delete existing avatar file
 		if err := bucket.Delete(user.ID); err != nil {
-			return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 				"error":   true,
 				"message": "Internal server error",
 			})
@@ -228,7 +181,7 @@ func UploadUserAvatar(ctx *fiber.Ctx) error {
 		"ext":     fileExtension,
 	}))
 	if err != nil {
-		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error":   true,
 			"message": "Internal server error",
 		})
@@ -239,7 +192,7 @@ func UploadUserAvatar(ctx *fiber.Ctx) error {
 
 	fileSize, err := uploadStream.Write(content)
 	if err != nil {
-		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error":   true,
 			"message": "Internal server error",
 		})
@@ -247,7 +200,7 @@ func UploadUserAvatar(ctx *fiber.Ctx) error {
 
 	log.Printf("Write file to DB was successful. File size: %d KB\n", fileSize/1024)
 
-	return ctx.Status(fiber.StatusOK).JSON(fiber.Map{
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"error":   false,
 		"message": "Avatar uploaded successfully",
 	})
@@ -306,6 +259,54 @@ func GetAvatarById(c *fiber.Ctx) error {
 	return c.Send(buffer.Bytes())
 }
 
-// func DeleteUserAvatar(ctx *fiber.Ctx) error {
+func DeleteUserAvatar(c *fiber.Ctx) error {
+	user := c.Locals("user").(*models.User)
+	db := c.Locals("db").(*mongo.Database)
 
+	var avatarMetadata bson.M
+
+	if err := db.Collection(os.Getenv("AVATAR_COLLECTION")).FindOne(c.Context(), fiber.Map{"metadata.user_id": user.ID}).Decode(&avatarMetadata); err != nil {
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+			"error":   true,
+			"message": "Avatar not found",
+		})
+	}
+
+	bucket, _ := gridfs.NewBucket(db, options.GridFSBucket().SetName(os.Getenv("AVATAR_BUCKET")))
+
+	if err := bucket.Delete(user.ID); err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error":   true,
+			"message": "Internal server error",
+		})
+	}
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"error":   false,
+		"message": "Avatar deleted successfully",
+	})
+}
+
+// func EditUser(c *fiber.Ctx) error {
+// 	validate := validator.New()
+// 	editUser := new(models.UserProfile)
+// 	c.BodyParser(&editUser)
+
+// 	if err := validate.Struct(editUser); err != nil {
+// 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+// 			"error":   true,
+// 			"message": "Error Validating Input, We can try again" + err.Error(),
+// 		})
+// 	}
+
+// 	//finding the user using wallet address
+// 	user := &models.UserProfile{}
+// 	db := c.Locals("db").(*mongo.Database)
+
+// 	if err := db.Collection(os.Getenv("USER_COLLECTION")).FindOne(c.Context(), fiber.Map{"wallet_address": user.WalletAddress}).Decode(&user); err != nil {
+// 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+// 			"error":   true,
+// 			"message": "Wallet Address incorrect",
+// 		})
+// 	}
 // }

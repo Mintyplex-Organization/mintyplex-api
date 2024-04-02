@@ -3,25 +3,26 @@ package main
 import (
 	"mintyplex-api/internal/database"
 	"mintyplex-api/internal/middleware"
+	"mintyplex-api/internal/routes"
 
 	"github.com/gofiber/fiber/v2"
 )
 
-func main(){
-	engine := fiber.New()
+func main() {
+	app := fiber.New()
+	
+	middleware.CorsMiddleware(app)
 
-	middleware.CorsMiddleware(engine)
-
-	engine.Get("/plexer", func (ctx *fiber.Ctx) error {
-		return ctx.SendString("Plexer Baby")
+	app.Get("/", func(c *fiber.Ctx) error {
+		return c.SendString("Plexer Baby")
 	})
 
-	DB := database.MongoClient()
-	engine.Use(middleware.IngestDb(DB))
+	
+	db := database.MongoClient()
+	app.Use(middleware.IngestDb(db))
 
 	
+	routes.UserRoutes(app)
 
-	engine.Listen(":8081")
-
-
+	app.Listen(":8081")
 }
