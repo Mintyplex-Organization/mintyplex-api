@@ -31,14 +31,16 @@ AVATAR_COLLECTION="avatars.files"
 
 ### add user profile - `POST`
     https://mintyplex-api.onrender.com/api/v1/user/profile/
-
+    
 request example-
+```
     {
     "wallet_address": "xion186n0xxs96rzvnrc8ld66zkywc54xvta0mc5ewx5yvx8tde4xvals8xxekr",
     "email": "john.doe@example.com",
     "x_link": "x.com/elstsp",
     "bio": "i love crypto"
     }
+```
 
 
 ### get a user profile - `GET`
