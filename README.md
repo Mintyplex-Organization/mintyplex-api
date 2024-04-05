@@ -34,10 +34,15 @@ AVATAR_COLLECTION="avatars.files"
 
 request example-
     {
-        "wallet_address": "xion186n0xxs96rzvnrc8ld66zkywc54xvta0mc5ewx5yvx8tde4xvals8xxekr",
-        "email": "reggaeton@gmail.com",
-        "x_link": "x.com/elstsp",
-        "bio": "i love crypto"
+            "email": "seanP@gmail.com",
+            "bio": "i love crypto",
+            "x_link": "x.com/seanP",
+    }
+    {
+            "wallet_address": "xion186n0xxs96rzvnrc8ld66zkywc54xvta0mc5ewx5yvx8tde4xvals8xxekr",
+            "email": "reggaeton@gmail.com",
+            "x_link": "x.com/elstsp",
+            "bio": "i love crypto"
     }
 
 
