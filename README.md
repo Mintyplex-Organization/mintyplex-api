@@ -29,6 +29,18 @@ AVATAR_COLLECTION="avatars.files"
 
 ## API-Endpoints
 
+### add user profile - `POST`
+    https://mintyplex-api.onrender.com/api/v1/user/profile/
+
+request example-
+    {
+        "wallet_address": "xion186n0xxs96rzvnrc8ld66zkywc54xvta0mc5ewx5yvx8tde4xvals8xxekr",
+        "email": "reggaeton@gmail.com",
+        "x_link": "x.com/elstsp",
+        "bio": "i love crypto"
+    }
+
+
 ### get a user profile - `GET`
     https://mintyplex-api.onrender.com/api/v1/user/profile/:id
 this route takes the user's id as a parameter. e.g `https://mintyplex-api.onrender.com/api/v1/user/profile/660c3aafe22f82232121bbd9`

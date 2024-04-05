@@ -2,7 +2,7 @@ package controllers
 
 import (
 	"bytes"
-	"fmt"
+	"context"
 	"io"
 	"log"
 	"mintyplex-api/internal/models"
@@ -71,46 +71,64 @@ func DoTier1(c *fiber.Ctx) error {
 	})
 }
 
-func UserProfile(c *fiber.Ctx) error {
-    // Commenting out the authentication check
-    // user := c.Locals("user").(*models.User)
+func GetUserProfile(c *fiber.Ctx) error {
+	id, err := primitive.ObjectIDFromHex(c.Params("id"))
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error":   true,
+			"message": "Invalid User, give it a second",
+		})
+	}
 
-    id, err := primitive.ObjectIDFromHex(c.Params("id"))
-    if err != nil {
-        return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-            "error":   true,
-            "message": "Invalid User, give it a second",
-        })
-    }
+	db := c.Locals("db").(*mongo.Database)
+	result := db.Collection(os.Getenv("USER_COLLECTION")).FindOne(c.Context(), fiber.Map{"_id": id})
+	if result.Err() != nil {
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+			"error":   true,
+			"message": "User not found, give it a second",
+		})
+	}
 
-    foundUser := new(models.UserProfile)
+	var foundUser models.User
+	if err := result.Decode(&foundUser); err != nil {
+		return err
+	}
 
-    db := c.Locals("db").(*mongo.Database)
-    if err := db.Collection(os.Getenv("USER_COLLECTION")).FindOne(c.Context(), fiber.Map{"_id": id}).Decode(&foundUser); err != nil {
-        return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
-            "error":   true,
-            "message": "User not found, give it a second",
-        })
-    }
-	fmt.Println(foundUser.WalletAddress,foundUser.Email,foundUser.Bio)
-
-    return c.Status(fiber.StatusOK).JSON(fiber.Map{
-        "error":   false,
-        "message": "User Profile",
-        "user": models.UserProfile{
-            ID:            foundUser.ID, // Assuming foundUser is the correct variable here
-            WalletAddress: foundUser.WalletAddress,
-            Email:         foundUser.Email,
-            Avatar:        "/api/v1/user/avatar/" + foundUser.ID,
-            Bio:           foundUser.Bio,
-            XLink:         foundUser.XLink,
-            CreatedAt:     foundUser.CreatedAt,
-            UpdatedAt:     foundUser.UpdatedAt,
-        },
-		
-    })
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"error":   false,
+		"message": "User Profile",
+		"user":    foundUser,
+	})
 }
 
+func UserProfile(c *fiber.Ctx) error {
+	db := c.Locals("db").(*mongo.Database)
+	result := db.Collection(os.Getenv("USER_COLLECTION"))
+	ctx, _ := context.WithTimeout(context.Background(), 10*time.Second)
+
+	var user models.UserProfile
+	userId, err := primitive.ObjectIDFromHex(c.Params("id"))
+	findUser := result.FindOne(ctx, bson.M{"_id": userId})
+	if err := findUser.Err(); err != nil {
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+			"success": false,
+			"message": "Catchphrase Not found",
+			"error":   err,
+		})
+	}
+	err = findUser.Decode(&user)
+	if err != nil {
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+			"success": false,
+			"message": "Catchphrase Not found",
+			"error":   err,
+		})
+	}
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+        "data":    user,
+        "success": true,
+    })
+}
 
 func UploadUserAvatar(c *fiber.Ctx) error {
 	user := c.Locals("user").(*models.User)

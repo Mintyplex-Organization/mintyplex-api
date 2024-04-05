@@ -2,7 +2,6 @@ package database
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"os"
 	"time"
@@ -22,7 +21,6 @@ func MongoClient() *mongo.Database {
 	clientOptions := options.Client().ApplyURI(os.Getenv("MONGODB_SRV_RECORD")).SetServerAPIOptions(serverAPIOptions)
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-	fmt.Println(os.Getenv("MONGODB_SRV_RECORD"))
 
 	client, err := mongo.Connect(ctx, clientOptions)
 	if err != nil {
