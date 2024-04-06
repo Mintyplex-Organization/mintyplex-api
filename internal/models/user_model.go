@@ -6,8 +6,8 @@ import (
 
 type User struct {
 	ID            primitive.ObjectID `bson:"_id,omitempty"`
-	WalletAddress string             `bson:"wallet_address,required"`
-	Email         string             `bson:"email,required"`
+	WalletAddress string             `bson:"wallet_addresspackage models"`
+	Email         string             `bson:"emailpackage models"`
 	XLink         string             `bson:"x_link,omitempty"`
 	Bio           string             `bson:"bio,omitempty"`
 	CreatedAt     int64              `bson:"created_at"`

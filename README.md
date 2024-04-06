@@ -5,7 +5,7 @@ this handles Mintyplex's authentication, authorization, users, storage, etc.
 - api: user facing part of the application
 
 # documentation for Mintyplex
-use: https://mintyplex-api.onrender.com/ [GET] to check if the API is up. it's no big deal if it doesn't give a `200` at first.
+use: `https://mintyplex-api.onrender.com/` [GET] to check if the API is up. it's no big deal if it doesn't give a `200` at first.
 
 slide to:
 
@@ -31,7 +31,7 @@ AVATAR_COLLECTION="avatars.files"
 
 ### add user profile - `POST`
     https://mintyplex-api.onrender.com/api/v1/user/profile/
-    
+
 request example-
 ```
     {
@@ -74,3 +74,10 @@ request example-
             "bio": "i love crypto",
             "x_link": "x.com/seanP",
     }
+
+
+### upload user avatar - `POST`
+    `https://mintyplex-api.onrender.com/api/v1/user/avatar`
+users upload their avatars .
+
+request example
