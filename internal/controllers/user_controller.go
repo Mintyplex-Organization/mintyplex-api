@@ -12,7 +12,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -22,16 +21,16 @@ import (
 )
 
 func DoTier1(c *fiber.Ctx) error {
-	validate := validator.New()
+	// validate := validator.New()
 	dotier1 := new(models.DoTier1)
 	c.BodyParser(&dotier1)
 
-	if err := validate.Struct(dotier1); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error":   true,
-			"message": "error while validating inputs, give it a second" + err.Error(),
-		})
-	}
+	// if err := validate.Struct(dotier1); err != nil {
+	// 	return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+	// 		"error":   true,
+	// 		"message": "error while validating inputs, give it a second" + err.Error(),
+	// 	})
+	// }
 
 	//perform tier1
 	user := &models.User{}
@@ -43,12 +42,12 @@ func DoTier1(c *fiber.Ctx) error {
 	user.CreatedAt = timeStamp
 	user.UpdatedAt = timeStamp
 
-	if err := validate.Struct(user); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error":   true,
-			"message": "error perform tier 1 upgrade, give it a second" + err.Error(),
-		})
-	}
+	// if err := validate.Struct(user); err != nil {
+	// 	return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+	// 		"error":   true,
+	// 		"message": "error perform tier 1 upgrade, give it a second" + err.Error(),
+	// 	})
+	// }
 
 	db := c.Locals("db").(*mongo.Database)
 
@@ -109,7 +108,7 @@ func UserProfile(c *fiber.Ctx) error {
 
 	var user models.UserProfile
 	userId, err := primitive.ObjectIDFromHex(c.Params("id"))
-	if err != nil{
+	if err != nil {
 		fmt.Println(err)
 	}
 	findUser := result.FindOne(ctx, bson.M{"_id": userId})
