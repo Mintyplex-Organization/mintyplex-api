@@ -3,6 +3,7 @@ package controllers
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"io"
 	"log"
 	"mintyplex-api/internal/models"
@@ -108,6 +109,9 @@ func UserProfile(c *fiber.Ctx) error {
 
 	var user models.UserProfile
 	userId, err := primitive.ObjectIDFromHex(c.Params("id"))
+	if err != nil{
+		fmt.Println(err)
+	}
 	findUser := result.FindOne(ctx, bson.M{"_id": userId})
 	if err := findUser.Err(); err != nil {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
@@ -125,9 +129,9 @@ func UserProfile(c *fiber.Ctx) error {
 		})
 	}
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
-        "data":    user,
-        "success": true,
-    })
+		"data":    user,
+		"success": true,
+	})
 }
 
 func UploadUserAvatar(c *fiber.Ctx) error {
