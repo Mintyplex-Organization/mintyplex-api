@@ -9,7 +9,9 @@ this handles Mintyplex's authentication, authorization, users, storage, etc.
 # tasks
 
 ## user management 🚧
-- define user data model ✔️
+- Design user profile functionality: This allows users to view and edit their profile information (e.g., name, bio, profile picture). ✔️
+- Implement profile update functionality: This allows users to modify their profile information and store the changes securely. 🚧
+- Integrate profile picture upload/management (optional): This allows users to upload and manage their profile pictures. 🚧
 
 
 ## product management 🚧
@@ -19,8 +21,6 @@ this handles Mintyplex's authentication, authorization, users, storage, etc.
 
 
 
-
-- api: user facing part of the application
 
 # documentation for Mintyplex
 use: `https://mintyplex-api.onrender.com/` [GET] to check if the API is up. it's no big deal if it doesn't give a `200` at first.
@@ -33,7 +33,7 @@ slide to:
 ## environment setup
 
 In the root directory of the application, create an 'app.env' file with the following;
-
+```
     # MONGO DB SRV Record
 MONGODB_SRV_RECORD="mongodb+srv://minty:plexerbaby@mpacluster0.b8ire6p.mongodb.net/?retryWrites=true&w=majority&appName=mpacluster0"
 
@@ -43,6 +43,7 @@ USER_COLLECTION="users"
 
 AVATAR_BUCKET="avatars"
 AVATAR_COLLECTION="avatars.files"
+```
 
 
 ## API-Endpoints
