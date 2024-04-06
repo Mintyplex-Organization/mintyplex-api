@@ -2,6 +2,24 @@
 get onboard plexer
 this handles Mintyplex's authentication, authorization, users, storage, etc.
 
+✔️ - done
+🚧 - pending/in progress
+📋 - backlog
+
+# tasks
+
+## user management 🚧
+- define user data model ✔️
+
+
+## product management 🚧
+
+## user dashboard 📋
+
+
+
+
+
 - api: user facing part of the application
 
 # documentation for Mintyplex
