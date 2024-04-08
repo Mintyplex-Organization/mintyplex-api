@@ -101,7 +101,7 @@ func GetUserProfile(c *fiber.Ctx) error {
 	})
 }
 
-func UserProfile(c *fiber.Ctx) error {
+func FetchUserProfile(c *fiber.Ctx) error {
 	db := c.Locals("db").(*mongo.Database)
 	result := db.Collection(os.Getenv("USER_COLLECTION"))
 	ctx, _ := context.WithTimeout(context.Background(), 10*time.Second)
@@ -130,6 +130,36 @@ func UserProfile(c *fiber.Ctx) error {
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"data":    user,
 		"success": true,
+	})
+}
+
+func UserProfile(c *fiber.Ctx) error {
+	id, err := primitive.ObjectIDFromHex(c.Params("id"))
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error":   true,
+			"message": "Invalid User, give it a second",
+		})
+	}
+
+	db := c.Locals("db").(*mongo.Database)
+	result := db.Collection(os.Getenv("USER_COLLECTION")).FindOne(c.Context(), fiber.Map{"_id": id})
+	if result.Err() != nil {
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+			"error":   true,
+			"message": "User not found, give it a second",
+		})
+	}
+
+	var foundUser models.User
+	if err := result.Decode(&foundUser); err != nil {
+		return err
+	}
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"error":   false,
+		"message": "User Profile",
+		"user":    foundUser,
 	})
 }
 
