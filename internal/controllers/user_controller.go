@@ -25,13 +25,6 @@ func DoTier1(c *fiber.Ctx) error {
 	dotier1 := new(models.DoTier1)
 	c.BodyParser(&dotier1)
 
-	// if err := validate.Struct(dotier1); err != nil {
-	// 	return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-	// 		"error":   true,
-	// 		"message": "error while validating inputs, give it a second" + err.Error(),
-	// 	})
-	// }
-
 	//perform tier1
 	user := &models.User{}
 	timeStamp := time.Now().Unix()
@@ -42,12 +35,6 @@ func DoTier1(c *fiber.Ctx) error {
 	user.CreatedAt = timeStamp
 	user.UpdatedAt = timeStamp
 
-	// if err := validate.Struct(user); err != nil {
-	// 	return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-	// 		"error":   true,
-	// 		"message": "error perform tier 1 upgrade, give it a second" + err.Error(),
-	// 	})
-	// }
 
 	db := c.Locals("db").(*mongo.Database)
 
@@ -55,6 +42,13 @@ func DoTier1(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusConflict).JSON(fiber.Map{
 			"error":   true,
 			"message": "this email has been used by you or someone else",
+		})
+	}
+
+	if err := db.Collection(os.Getenv("USER_COLLECTION")).FindOne(c.Context(), fiber.Map{"wallet_address": user.WalletAddress}).Decode(&user); err == nil {
+		return c.Status(fiber.StatusConflict).JSON(fiber.Map{
+			"error":   true,
+			"message": "this wallet cannot have another account",
 		})
 	}
 
