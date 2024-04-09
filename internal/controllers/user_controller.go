@@ -2,7 +2,6 @@ package controllers
 
 import (
 	"bytes"
-	"context"
 	"fmt"
 	"io"
 	"log"
@@ -21,7 +20,7 @@ import (
 )
 
 func DoTier1(c *fiber.Ctx) error {
-	// validate := validator.New()
+
 	dotier1 := new(models.DoTier1)
 	c.BodyParser(&dotier1)
 
@@ -32,9 +31,11 @@ func DoTier1(c *fiber.Ctx) error {
 	user.WalletAddress = dotier1.WalletAddress
 	user.Email = dotier1.Email
 	user.XLink = dotier1.XLink
+	user.Bio = dotier1.Bio
 	user.CreatedAt = timeStamp
 	user.UpdatedAt = timeStamp
 
+	fmt.Println(dotier1.Bio, user.Bio)
 
 	db := c.Locals("db").(*mongo.Database)
 
@@ -65,84 +66,28 @@ func DoTier1(c *fiber.Ctx) error {
 	})
 }
 
-func GetUserProfile(c *fiber.Ctx) error {
-	id, err := primitive.ObjectIDFromHex(c.Params("id"))
-	if err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error":   true,
-			"message": "Invalid User, give it a second",
-		})
-	}
-
-	db := c.Locals("db").(*mongo.Database)
-	result := db.Collection(os.Getenv("USER_COLLECTION")).FindOne(c.Context(), fiber.Map{"_id": id})
-	if result.Err() != nil {
-		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
-			"error":   true,
-			"message": "User not found, give it a second",
-		})
-	}
-
-	var foundUser models.User
-	if err := result.Decode(&foundUser); err != nil {
-		return err
-	}
-
-	return c.Status(fiber.StatusOK).JSON(fiber.Map{
-		"error":   false,
-		"message": "User Profile",
-		"user":    foundUser,
-	})
-}
-
-func FetchUserProfile(c *fiber.Ctx) error {
-	db := c.Locals("db").(*mongo.Database)
-	result := db.Collection(os.Getenv("USER_COLLECTION"))
-	ctx, _ := context.WithTimeout(context.Background(), 10*time.Second)
-
-	var user models.UserProfile
-	userId, err := primitive.ObjectIDFromHex(c.Params("id"))
-	if err != nil {
-		fmt.Println(err)
-	}
-	findUser := result.FindOne(ctx, bson.M{"_id": userId})
-	if err := findUser.Err(); err != nil {
-		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
-			"success": false,
-			"message": "Catchphrase Not found",
-			"error":   err,
-		})
-	}
-	err = findUser.Decode(&user)
-	if err != nil {
-		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
-			"success": false,
-			"message": "Catchphrase Not found",
-			"error":   err,
-		})
-	}
-	return c.Status(fiber.StatusOK).JSON(fiber.Map{
-		"data":    user,
-		"success": true,
-	})
-}
-
 func UserProfile(c *fiber.Ctx) error {
-	id, err := primitive.ObjectIDFromHex(c.Params("id"))
-	if err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error":   true,
-			"message": "Invalid User, give it a second",
-		})
-	}
+	walletAddress := c.Params("id")
+
+	fmt.Println(walletAddress)
 
 	db := c.Locals("db").(*mongo.Database)
-	result := db.Collection(os.Getenv("USER_COLLECTION")).FindOne(c.Context(), fiber.Map{"_id": id})
+
+	result := db.Collection(os.Getenv("USER_COLLECTION")).FindOne(c.Context(), fiber.Map{"_id": walletAddress})
+	var err error
 	if result.Err() != nil {
-		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
-			"error":   true,
-			"message": "User not found, give it a second",
-		})
+		if err == mongo.ErrNoDocuments {
+			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+				"error":   true,
+				"message": "User not found, give it a second",
+			})
+		} else {
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+				"error":   true,
+				"message": "User not found rounds, give it a second",
+			})
+		}
+
 	}
 
 	var foundUser models.User
