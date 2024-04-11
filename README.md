@@ -96,7 +96,7 @@ request example-
 
 
 ### upload user avatar - `POST`
-    `https://mintyplex-api.onrender.com/api/v1/user/avatar`
-users upload their avatars .
+    `https://mintyplex-api.onrender.com/api/v1/user/avatar/:id`
+users upload their avatars. with any api client of your choice that supports file uploading and under `form` select files(this setup works for thunder client in vs code at the time), form name is `avatar`, go ahead to select image and send request.
 
 request example

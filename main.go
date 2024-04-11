@@ -10,18 +10,16 @@ import (
 
 func main() {
 	app := fiber.New()
-	
+
 	middleware.CorsMiddleware(app)
 
 	app.Get("/", func(c *fiber.Ctx) error {
 		return c.SendString("Plexer Baby")
 	})
 
-	
 	db := database.MongoClient()
 	app.Use(middleware.IngestDb(db))
 
-	
 	routes.UserRoutes(app)
 
 	app.Listen(":8081")

@@ -20,6 +20,7 @@ type User struct {
 	Email         string             `bson:"email,required"`
 	XLink         string             `bson:"x_link,omitempty"`
 	Bio           string             `bson:"bio,omitempty"`
+	Avatar        string             `bson:"avatar"`
 	CreatedAt     int64              `bson:"created_at"`
 	UpdatedAt     int64              `bson:"updated_at"`
 }

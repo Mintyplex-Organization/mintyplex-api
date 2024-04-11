@@ -98,13 +98,33 @@ func UserProfile(c *fiber.Ctx) error {
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"error":   false,
 		"message": "User Profile",
-		"user":    foundUser,
+		"user": models.UserProfile{
+			WalletAddress: foundUser.WalletAddress,
+			ID:            foundUser.ID.Hex(),
+			Email:         foundUser.Email,
+			XLink:         foundUser.XLink,
+			Bio:           foundUser.Bio,
+			Avatar:        "./api/v1/user/avatar/" + foundUser.WalletAddress,
+			CreatedAt:     foundUser.CreatedAt,
+			UpdatedAt:     foundUser.UpdatedAt,
+		},
 	})
 }
 
 func UploadUserAvatar(c *fiber.Ctx) error {
-	user := c.Locals("user").(*models.User)
+	walletAddress := c.Params("id")
+
 	db := c.Locals("db").(*mongo.Database)
+
+	// Fetch user using wallet address
+	var user models.User
+	err := db.Collection(os.Getenv("USER_COLLECTION")).FindOne(c.Context(), bson.M{"_id": walletAddress}).Decode(&user)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error":   true,
+			"message": "User not found",
+		})
+	}
 
 	fileHeader, err := c.FormFile("avatar")
 	if err != nil {
@@ -114,7 +134,7 @@ func UploadUserAvatar(c *fiber.Ctx) error {
 		})
 	}
 
-	if (fileHeader.Size) > 1024*1024 {
+	if fileHeader.Size > 1024*1024 {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error":   true,
 			"message": "File size too large, max 1MB allowed",
@@ -156,7 +176,7 @@ func UploadUserAvatar(c *fiber.Ctx) error {
 
 	var avatarMetadata bson.M
 
-	if err := db.Collection(os.Getenv("AVATAR_COLLECTION")).FindOne(c.Context(), fiber.Map{"metadata.user_id": user.ID}).Decode(&avatarMetadata); err == nil {
+	if err := db.Collection(os.Getenv("AVATAR_COLLECTION")).FindOne(c.Context(), fiber.Map{"metadata.user_id": user.WalletAddress}).Decode(&avatarMetadata); err == nil {
 		// Delete existing avatar file
 		if err := bucket.Delete(user.ID); err != nil {
 			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
@@ -167,7 +187,7 @@ func UploadUserAvatar(c *fiber.Ctx) error {
 	}
 
 	uploadStream, err := bucket.OpenUploadStream(fileHeader.Filename, options.GridFSUpload().SetMetadata(fiber.Map{
-		"user_id": user.ID,
+		"user_id": user.WalletAddress,
 		"ext":     fileExtension,
 	}))
 	if err != nil {
@@ -177,7 +197,7 @@ func UploadUserAvatar(c *fiber.Ctx) error {
 		})
 	}
 
-	uploadStream.FileID = user.ID
+	uploadStream.FileID = user.WalletAddress
 	defer uploadStream.Close()
 
 	fileSize, err := uploadStream.Write(content)
