@@ -1,4 +1,5 @@
 # mintyplex-api documentaion
+
 get onboard plexer
 this handles Mintyplex's authentication, authorization, users, storage, etc.
 
@@ -9,20 +10,17 @@ this handles Mintyplex's authentication, authorization, users, storage, etc.
 # tasks
 
 ## user management 🚧
+
 - Design user profile functionality: This allows users to view and edit their profile information (e.g., name, bio, profile picture). ✔️
 - Implement profile update functionality: This allows users to modify their profile information and store the changes securely. 🚧
 - Integrate profile picture upload/management (optional): This allows users to upload and manage their profile pictures. 🚧
-
 
 ## product management 🚧
 
 ## user dashboard 📋
 
-
-
-
-
 # documentation for Mintyplex
+
 use: `https://mintyplex-api.onrender.com/` [GET] to check if the API is up. it's no big deal if it doesn't give a `200` at first.
 
 slide to:
@@ -33,6 +31,7 @@ slide to:
 ## environment setup
 
 In the root directory of the application, create an 'app.env' file with the following;
+
 ```
     # MONGO DB SRV Record
 MONGODB_SRV_RECORD="mongodb+srv://minty:plexerbaby@mpacluster0.b8ire6p.mongodb.net/?retryWrites=true&w=majority&appName=mpacluster0"
@@ -45,13 +44,14 @@ AVATAR_BUCKET="avatars"
 AVATAR_COLLECTION="avatars.files"
 ```
 
-
 ## API-Endpoints
 
 ### add user profile - `POST`
+
     https://mintyplex-api.onrender.com/api/v1/user/profile/
 
 request example-
+
 ```
     {
     "wallet_address": "xion186n0xxs96rzvnrc8ld66zkywc54xvta0mc5ewx5yvx8tde4xvals8xxekr",
@@ -61,9 +61,10 @@ request example-
     }
 ```
 
-
 ### get a user profile - `GET`
+
     https://mintyplex-api.onrender.com/api/v1/user/profile/:id
+
 this route takes the user's id as a parameter. e.g `https://mintyplex-api.onrender.com/api/v1/user/profile/660c3aafe22f82232121bbd9`
 
 response example-
@@ -84,19 +85,47 @@ response example-
     }
 
 ### edit a user profile - `PUT`
-    https://mintyplex-api.onrender.com/api/v1/user/profile/:id
-this route enables users to edit already existing information
-request example- 
 
+    `https://mintyplex-api.onrender.com/api/v1/user/profile/:id`
+
+this route enables users to edit already existing information
+request example-
+```
     {
             "email": "seanP@gmail.com",
             "bio": "i love crypto",
             "x_link": "x.com/seanP",
     }
-
+```
 
 ### upload user avatar - `POST`
+
     `https://mintyplex-api.onrender.com/api/v1/user/avatar/:id`
+
 users upload their avatars. with any api client of your choice that supports file uploading and under `form` select files(this setup works for thunder client in vs code at the time), form name is `avatar`, go ahead to select image and send request.
 
 request example
+
+### add a product - `POST`
+
+        `https://mintyplex-api.onrender.com/api/v1/product/:id`
+
+`*the ':id' is the user's id which is their wallet address`
+
+request example-
+
+```
+    {
+  "name": "Rugged Ruddy",
+  "price": 300.99,
+  "discount": 99.0,
+  "description": "This is the tale of the burgundy.",
+  "categories": ["axeless", "dull"],
+  "quantity": 10,
+  "tags": ["crip", "lrip"]
+}
+```
+### get all products - `GET`
+        `https://mintyplex-api.onrender.com/api/v1/product/`
+this route all gets all existing products in the database
+

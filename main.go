@@ -21,6 +21,7 @@ func main() {
 	app.Use(middleware.IngestDb(db))
 
 	routes.UserRoutes(app)
+	routes.ProductRoutes(app)
 
 	app.Listen(":8081")
 }
