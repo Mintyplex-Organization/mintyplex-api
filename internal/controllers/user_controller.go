@@ -29,7 +29,7 @@ func DoTier1(c *fiber.Ctx) error {
 	timeStamp := time.Now().Unix()
 
 	user.WalletAddress = dotier1.WalletAddress
-	user.Email = dotier1.Email
+	// user.Email = dotier1.Email
 	user.XLink = dotier1.XLink
 	user.Bio = dotier1.Bio
 	user.CreatedAt = timeStamp
@@ -39,12 +39,12 @@ func DoTier1(c *fiber.Ctx) error {
 
 	db := c.Locals("db").(*mongo.Database)
 
-	if err := db.Collection(os.Getenv("USER_COLLECTION")).FindOne(c.Context(), fiber.Map{"email": user.Email}).Decode(&user); err == nil {
-		return c.Status(fiber.StatusConflict).JSON(fiber.Map{
-			"error":   true,
-			"message": "this email has been used by you or someone else",
-		})
-	}
+	// if err := db.Collection(os.Getenv("USER_COLLECTION")).FindOne(c.Context(), fiber.Map{"email": user.Email}).Decode(&user); err == nil {
+	// 	return c.Status(fiber.StatusConflict).JSON(fiber.Map{
+	// 		"error":   true,
+	// 		"message": "this email has been used by you or someone else",
+	// 	})
+	// }
 
 	if err := db.Collection(os.Getenv("USER_COLLECTION")).FindOne(c.Context(), fiber.Map{"wallet_address": user.WalletAddress}).Decode(&user); err == nil {
 		return c.Status(fiber.StatusConflict).JSON(fiber.Map{
@@ -101,7 +101,7 @@ func UserProfile(c *fiber.Ctx) error {
 		"user": models.UserProfile{
 			WalletAddress: foundUser.WalletAddress,
 			ID:            foundUser.ID.Hex(),
-			Email:         foundUser.Email,
+			// Email:         foundUser.Email,
 			XLink:         foundUser.XLink,
 			Bio:           foundUser.Bio,
 			Avatar:        "./api/v1/user/avatar/" + foundUser.WalletAddress,

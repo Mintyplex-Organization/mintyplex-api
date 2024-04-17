@@ -12,9 +12,9 @@ package models
 // }
 
 type UserProfile struct {
-	WalletAddress string `json:"wallet_address" bson:"_id,omitempty"` // Now primary identifier
-	ID            string `json:"id"`                                  // Moved down
-	Email         string `json:"email"`
+	WalletAddress string `json:"wallet_address" bson:"_id,omitempty"` 
+	ID            string `json:"id"`                                  
+	// Email         string `json:"email"`
 	Avatar        string `json:"avatar"`
 	Bio           string `json:"bio"`
 	XLink         string `json:"x_link"`
