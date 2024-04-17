@@ -122,7 +122,7 @@ func UploadUserAvatar(c *fiber.Ctx) error {
 	if err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error":   true,
-			"message": "User not found",
+			"message": "User not found "+err.Error(),
 		})
 	}
 
@@ -130,7 +130,7 @@ func UploadUserAvatar(c *fiber.Ctx) error {
 	if err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error":   true,
-			"message": err.Error(),
+			"message": "file header is not type of avatar "+err.Error(),
 		})
 	}
 
