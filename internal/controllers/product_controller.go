@@ -146,6 +146,48 @@ func OneProduct(c *fiber.Ctx) error {
 	})
 }
 
+// func modItemUpload(c *fiber.Ctx) error {
+// 	type RequestBody struct {
+// 		WalletAddress string `json:"wallet_address"`
+// 		Type string `json:"type"`
+// 		File interface{} `json:"file"`
+// 	}
+
+// 	var reqBody RequestBody
+// 	err := c.BodyParser(&reqBody)
+// 	if err != nil{
+// 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+// 			"error": true,
+// 			"message": "request is invalid",
+// 		})
+// 	}
+
+// 	if reqBody.Type == "ebook" && !(strings.HasSuffix(reqBody.File.(string), ".pdf") || strings.HasSuffix(reqBody.File.(string), ".epub")){
+// 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+// 			  "error": true,
+//       "message": "Invalid ebook format. Only .pdf and .epub extensions allowed",
+// 		})
+// 	}
+
+// 	db := c.Locals("db").(*mongo.Database)
+
+// 	var user models.User
+// 	err = db.Collection(os.Getenv("USER_COLLECTION")).FindOne(c.Context(), bson.M{"_id": reqBody.WalletAddress}).Decode(user)
+// 	if err != nil{
+// 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+// 			"error": true,
+// 			"message": "incomplete request",
+// 		})
+// 	}
+
+// 	baseUrl := "http://localhost:9980/api/worker/objects/"
+// 	itemPath := fmt.Sprintf("%s/%s/%s", reqBody.WalletAddress, reqBody.Type, "[nameofitem]") // Replace with actual file name handling
+// 	url := baseUrl+itemPath
+// 	fmt.Println(url)
+
+
+// }
+
 func ItemUpload(c *fiber.Ctx) error {
 	// Authorization token or credentials
 	authToken := "Basic UGFzc3dvcmQ6MjQ3YWRtaW5pc3RyYXRpb24="
@@ -154,6 +196,7 @@ func ItemUpload(c *fiber.Ctx) error {
 	method := "PUT"
 
 	payload := strings.NewReader("<file contents here>")
+	fmt.Println(payload)
 
 	client := &http.Client{}
 	req, err := http.NewRequest(method, url, payload)
@@ -163,7 +206,7 @@ func ItemUpload(c *fiber.Ctx) error {
 			"message": err.Error(),
 		})
 	}
-
+ 
 	// Add authorization header
 	req.Header.Set("Authorization", authToken)
 	req.Header.Set("Content-Type", "text/plain")
@@ -185,6 +228,7 @@ func ItemUpload(c *fiber.Ctx) error {
 		})
 	}
 	fmt.Println(string(body))
+	fmt.Println(body)
 
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"error":   false,

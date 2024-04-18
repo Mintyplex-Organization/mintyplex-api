@@ -3,7 +3,6 @@ package models
 // type UserProfile struct {
 // 	ID            string `json:"id"`
 // 	WalletAddress string `json:"wallet_address"`
-// 	Email         string `json:"email"`
 // 	Avatar        string `json:"avatar"`
 // 	Bio           string `json:"bio"`
 // 	XLink         string `json:"x_link"`
@@ -13,8 +12,7 @@ package models
 
 type UserProfile struct {
 	WalletAddress string `json:"wallet_address" bson:"_id,omitempty"` 
-	ID            string `json:"id"`                                  
-	// Email         string `json:"email"`
+	ID            string `json:"uid"`
 	Avatar        string `json:"avatar"`
 	Bio           string `json:"bio"`
 	XLink         string `json:"x_link"`

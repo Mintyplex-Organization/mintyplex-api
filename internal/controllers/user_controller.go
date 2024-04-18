@@ -24,27 +24,16 @@ func DoTier1(c *fiber.Ctx) error {
 	dotier1 := new(models.DoTier1)
 	c.BodyParser(&dotier1)
 
-	//perform tier1
 	user := &models.User{}
 	timeStamp := time.Now().Unix()
 
 	user.WalletAddress = dotier1.WalletAddress
-	// user.Email = dotier1.Email
 	user.XLink = dotier1.XLink
 	user.Bio = dotier1.Bio
 	user.CreatedAt = timeStamp
 	user.UpdatedAt = timeStamp
 
-	fmt.Println(dotier1.Bio, user.Bio)
-
 	db := c.Locals("db").(*mongo.Database)
-
-	// if err := db.Collection(os.Getenv("USER_COLLECTION")).FindOne(c.Context(), fiber.Map{"email": user.Email}).Decode(&user); err == nil {
-	// 	return c.Status(fiber.StatusConflict).JSON(fiber.Map{
-	// 		"error":   true,
-	// 		"message": "this email has been used by you or someone else",
-	// 	})
-	// }
 
 	if err := db.Collection(os.Getenv("USER_COLLECTION")).FindOne(c.Context(), fiber.Map{"wallet_address": user.WalletAddress}).Decode(&user); err == nil {
 		return c.Status(fiber.StatusConflict).JSON(fiber.Map{
@@ -56,7 +45,7 @@ func DoTier1(c *fiber.Ctx) error {
 	if _, err := db.Collection(os.Getenv("USER_COLLECTION")).InsertOne(c.Context(), user); err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error":   true,
-			"message": "error uploading, give it a second" + err.Error(),
+			"message": "invalid and repeating credentials" + err.Error(),
 		})
 	}
 
@@ -101,12 +90,11 @@ func UserProfile(c *fiber.Ctx) error {
 		"user": models.UserProfile{
 			WalletAddress: foundUser.WalletAddress,
 			ID:            foundUser.ID.Hex(),
-			// Email:         foundUser.Email,
-			XLink:         foundUser.XLink,
-			Bio:           foundUser.Bio,
-			Avatar:        "./api/v1/user/avatar/" + foundUser.WalletAddress,
-			CreatedAt:     foundUser.CreatedAt,
-			UpdatedAt:     foundUser.UpdatedAt,
+			XLink:     foundUser.XLink,
+			Bio:       foundUser.Bio,
+			Avatar:    "./api/v1/user/avatar/" + foundUser.WalletAddress,
+			CreatedAt: foundUser.CreatedAt,
+			UpdatedAt: foundUser.UpdatedAt,
 		},
 	})
 }
@@ -122,7 +110,7 @@ func UploadUserAvatar(c *fiber.Ctx) error {
 	if err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error":   true,
-			"message": "User not found "+err.Error(),
+			"message": "User not found " + err.Error(),
 		})
 	}
 
@@ -130,7 +118,7 @@ func UploadUserAvatar(c *fiber.Ctx) error {
 	if err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error":   true,
-			"message": "file header is not type of avatar "+err.Error(),
+			"message": "file header is not type of avatar " + err.Error(),
 		})
 	}
 
