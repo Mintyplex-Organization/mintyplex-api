@@ -13,7 +13,6 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/gridfs"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -90,11 +89,11 @@ func UserProfile(c *fiber.Ctx) error {
 		"user": models.UserProfile{
 			WalletAddress: foundUser.WalletAddress,
 			ID:            foundUser.ID.Hex(),
-			XLink:     foundUser.XLink,
-			Bio:       foundUser.Bio,
-			Avatar:    "./api/v1/user/avatar/" + foundUser.WalletAddress,
-			CreatedAt: foundUser.CreatedAt,
-			UpdatedAt: foundUser.UpdatedAt,
+			XLink:         foundUser.XLink,
+			Bio:           foundUser.Bio,
+			Avatar:        foundUser.WalletAddress + "/avatar/",
+			CreatedAt:     foundUser.CreatedAt,
+			UpdatedAt:     foundUser.UpdatedAt,
 		},
 	})
 }
@@ -204,37 +203,55 @@ func UploadUserAvatar(c *fiber.Ctx) error {
 	})
 }
 
-func GetUserAvatar(c *fiber.Ctx) error {
-	user := c.Locals("user").(*models.User)
-	db := c.Locals("db").(*mongo.Database)
+// func GetUserAvatar(c *fiber.Ctx) error {
+// 	walletAddress := c.Params("id")
 
-	var avatarMetadata bson.M
+// 	db := c.Locals("db").(*mongo.Database)
 
-	if err := db.Collection(os.Getenv("AVATAR_COLLECTION")).FindOne(c.Context(), fiber.Map{"metadata.user_id": user.ID}).Decode(&avatarMetadata); err != nil {
-		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
-			"error":   true,
-			"message": "Avatar not found",
-		})
-	}
+// 	result := db.Collection(os.Getenv("USER_COLLECTION")).FindOne(c.Context(), fiber.Map{"_id": walletAddress})
+// 	var err error
+// 	if result.Err() != nil {
+// 		if err == mongo.ErrNoDocuments {
+// 			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+// 				"error":   true,
+// 				"message": "User not found, give it a second",
+// 			})
+// 		} else {
+// 			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+// 				"error":   true,
+// 				"message": "User not found rounds, give it a second",
+// 			})
+// 		}
 
-	bucket, _ := gridfs.NewBucket(db, options.GridFSBucket().SetName(os.Getenv("AVATAR_BUCKET")))
+// 	}
 
-	var buffer bytes.Buffer
-	bucket.DownloadToStream(user.ID, &buffer)
+// 	var avatarMetadata bson.M
 
-	utils.SetAvatarHeaders(c, buffer, avatarMetadata["metadata"].(bson.M)["ext"].(string))
+// 	if err := db.Collection(os.Getenv("AVATAR_COLLECTION")).FindOne(c.Context(), fiber.Map{"metadata.user_id": walletAddress}).Decode(&avatarMetadata); err != nil {
+// 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+// 			"error":   true,
+// 			"message": "Avatar not found",
+// 		})
+// 	}
 
-	return c.Send(buffer.Bytes())
-}
+// 	bucket, _ := gridfs.NewBucket(db, options.GridFSBucket().SetName(os.Getenv("AVATAR_BUCKET")))
+
+// 	var buffer bytes.Buffer
+// 	bucket.DownloadToStream(walletAddress, &buffer)
+
+// 	utils.SetAvatarHeaders(c, buffer, avatarMetadata["metadata"].(bson.M)["ext"].(string))
+
+// 	return c.Send(buffer.Bytes())
+// }
 
 func GetAvatarById(c *fiber.Ctx) error {
-	userID, err := primitive.ObjectIDFromHex(c.Params("id"))
-	if err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error":   true,
-			"message": "Invalid user ID",
-		})
-	}
+	userID := c.Params("id")
+	// if err != nil {
+	// 	return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+	// 		"error":   true,
+	// 		"message": "Invalid user ID",
+	// 	})
+	// }
 
 	var avatarMetadata bson.M
 

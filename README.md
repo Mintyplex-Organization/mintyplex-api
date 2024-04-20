@@ -25,8 +25,9 @@ use: `https://mintyplex-api.onrender.com/` [GET] to check if the API is up. it's
 
 slide to:
 
-- [Environment Setup](#Environment-Setup)
-- [API Endpoints](#API-Endpoints)
+- [environment setup](#environment-setup)
+- [api endpoints](#api-endpoints)
+- [user endpoints](#user-endpoints)
 
 ## environment setup
 
@@ -45,6 +46,8 @@ AVATAR_COLLECTION="avatars.files"
 ```
 
 ## API-Endpoints
+
+## user endpoints
 
 ### add user profile - `POST`
 
@@ -104,7 +107,11 @@ request example-
 
 users upload their avatars. with any api client of your choice that supports file uploading and under `form` select files(this setup works for thunder client in vs code at the time), form name is `avatar`, go ahead to select image and send request.
 
-request example
+### retrieve user avatar - `POST`
+    `https://mintyplex-api.onrender.com/api/v1/user/avatar/:id`
+retrieve users' avatars
+
+## product endpoints
 
 ### add a product - `POST`
 

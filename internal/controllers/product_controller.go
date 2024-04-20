@@ -192,10 +192,10 @@ func ItemUpload(c *fiber.Ctx) error {
 	// Authorization token or credentials
 	authToken := "Basic UGFzc3dvcmQ6MjQ3YWRtaW5pc3RyYXRpb24="
 
-	url := "http://localhost:9980/api/worker/objects/user_products/sion419619/video_the-essense-of-work"
+	url := "http://localhost:9980/api/worker/objects/user_products/byon419619/ebook/the-essense-of-habit"
 	method := "PUT"
 
-	payload := strings.NewReader("<file contents here>")
+	payload := strings.NewReader("file")
 	fmt.Println(payload)
 
 	client := &http.Client{}
