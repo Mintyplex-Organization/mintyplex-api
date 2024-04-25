@@ -1,6 +1,8 @@
 package models
 
 import (
+	"time"
+
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
@@ -14,11 +16,11 @@ import (
 // }
 
 type User struct {
-	WalletAddress string             `bson:"_id,omitempty"` 
-	ID            primitive.ObjectID `bson:"uid,omitempty"` 
+	WalletAddress string             `bson:"_id,omitempty"`
+	ID            primitive.ObjectID `bson:"uid,omitempty"`
 	XLink         string             `bson:"x_link,omitempty"`
 	Bio           string             `bson:"bio,omitempty"`
 	Avatar        string             `bson:"avatar"`
-	CreatedAt     int64              `bson:"created_at"`
-	UpdatedAt     int64              `bson:"updated_at"`
+	CreatedAt     time.Time              `bson:"created_at"`
+	UpdatedAt     time.Time              `bson:"updated_at"`
 }

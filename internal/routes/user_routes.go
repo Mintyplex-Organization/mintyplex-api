@@ -13,11 +13,13 @@ func UserRoutes(app *fiber.App) {
 	// <--- user profile --->
 	route.Post("/profile", controllers.DoTier1)
 	route.Get("/profile/:id", controllers.UserProfile)
-	// route.Put("/profile", controllers.EditUser)
+	route.Put("/profile/:id", controllers.UpdateUserProfile)
 
 	// <--- avatar routes --->
 	route.Post("/avatar/:id", controllers.UploadUserAvatar)
+	route.Get("/avatar", controllers.UpdateUserAvatar)
 	route.Get("/avatar/:id", controllers.GetAvatarById)
+	route.Delete("/avatar/:id", controllers.DeleteUserAvatar)
 	// route.Get("/avatar", controllers.GetUserAvatar)
 	
 	route.Delete("/avatar", middleware.Auth(), controllers.DeleteUserAvatar)

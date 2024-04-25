@@ -3,11 +3,8 @@ package controllers
 import (
 	"context"
 	"fmt"
-	"io"
 	"mintyplex-api/internal/models"
-	"net/http"
 	"os"
-	"strings"
 	"time"
 
 	"github.com/go-playground/validator/v10"
@@ -146,6 +143,50 @@ func OneProduct(c *fiber.Ctx) error {
 	})
 }
 
+func UpdateProduct(c *fiber.Ctx) error {
+	var updateData bson.M
+	if err := c.BodyParser(&updateData); err != nil {
+		return c.Status(400).JSON(fiber.Map{
+			"status":  "error",
+			"message": "request is invalid",
+			"data":    err,
+		})
+	}
+
+	id := c.Params("id")
+
+	productId, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		return c.Status(400).JSON(fiber.Map{
+			"status":  "error",
+			"message": "link is broken, try again",
+			"data":    err,
+		})
+	}
+
+	filter := bson.M{"_id": productId}
+
+	db := c.Locals("db").(*mongo.Database)
+	product, err := db.Collection(os.Getenv("PRODUCT_COLLECTION")).FindOneAndUpdate(c.Context(), filter, bson.M{"$set": updateData}).DecodeBytes()
+	if err != nil {
+		return c.Status(400).JSON(fiber.Map{
+			"status":  "error",
+			"message": "Error updating product",
+			"data":    err,
+		})
+	}
+
+	return c.Status(200).JSON(fiber.Map{
+		"status":  "success",
+		"message": "Product updated successfully",
+		"data":    product.String(),
+	})
+}
+
+func DeleteProduct(c *fiber.Ctx) error {
+
+}
+
 // func modItemUpload(c *fiber.Ctx) error {
 // 	type RequestBody struct {
 // 		WalletAddress string `json:"wallet_address"`
@@ -185,56 +226,55 @@ func OneProduct(c *fiber.Ctx) error {
 // 	url := baseUrl+itemPath
 // 	fmt.Println(url)
 
-
 // }
 
-func ItemUpload(c *fiber.Ctx) error {
-	// Authorization token or credentials
-	authToken := "Basic UGFzc3dvcmQ6MjQ3YWRtaW5pc3RyYXRpb24="
+// func ItemUpload(c *fiber.Ctx) error {
+// 	// Authorization token or credentials
+// 	authToken := "Basic UGFzc3dvcmQ6MjQ3YWRtaW5pc3RyYXRpb24="
 
-	url := "http://localhost:9980/api/worker/objects/user_products/byon419619/ebook/the-essense-of-habit"
-	method := "PUT"
+// 	url := "http://localhost:9980/api/worker/objects/user_products/byon419619/ebook/the-essense-of-habit"
+// 	method := "PUT"
 
-	payload := strings.NewReader("file")
-	fmt.Println(payload)
+// 	payload := strings.NewReader("file")
+// 	fmt.Println(payload)
 
-	client := &http.Client{}
-	req, err := http.NewRequest(method, url, payload)
-	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error":   true,
-			"message": err.Error(),
-		})
-	}
- 
-	// Add authorization header
-	req.Header.Set("Authorization", authToken)
-	req.Header.Set("Content-Type", "text/plain")
+// 	client := &http.Client{}
+// 	req, err := http.NewRequest(method, url, payload)
+// 	if err != nil {
+// 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+// 			"error":   true,
+// 			"message": err.Error(),
+// 		})
+// 	}
 
-	res, err := client.Do(req)
-	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error":   true,
-			"message": err.Error(),
-		})
-	}
-	defer res.Body.Close()
+// 	// Add authorization header
+// 	req.Header.Set("Authorization", authToken)
+// 	req.Header.Set("Content-Type", "text/plain")
 
-	body, err := io.ReadAll(res.Body)
-	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error":   true,
-			"message": err.Error(),
-		})
-	}
-	fmt.Println(string(body))
-	fmt.Println(body)
+// 	res, err := client.Do(req)
+// 	if err != nil {
+// 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+// 			"error":   true,
+// 			"message": err.Error(),
+// 		})
+// 	}
+// 	defer res.Body.Close()
 
-	return c.Status(fiber.StatusOK).JSON(fiber.Map{
-		"error":   false,
-		"message": "Item uploaded successfully",
-	})
-}
+// 	body, err := io.ReadAll(res.Body)
+// 	if err != nil {
+// 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+// 			"error":   true,
+// 			"message": err.Error(),
+// 		})
+// 	}
+// 	fmt.Println(string(body))
+// 	fmt.Println(body)
+
+// 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+// 		"error":   false,
+// 		"message": "Item uploaded successfully",
+// 	})
+// }
 
 // func UpdateProduct(c *fiber.Ctx)error{
 // 	ctx, cancel := context.WithTimeout(context.TODO(), 50*time.Second)

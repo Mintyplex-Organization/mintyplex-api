@@ -24,13 +24,12 @@ func DoTier1(c *fiber.Ctx) error {
 	c.BodyParser(&dotier1)
 
 	user := &models.User{}
-	timeStamp := time.Now().Unix()
 
 	user.WalletAddress = dotier1.WalletAddress
 	user.XLink = dotier1.XLink
 	user.Bio = dotier1.Bio
-	user.CreatedAt = timeStamp
-	user.UpdatedAt = timeStamp
+	user.CreatedAt = time.Now()
+	user.UpdatedAt = time.Now()
 
 	db := c.Locals("db").(*mongo.Database)
 
@@ -53,6 +52,58 @@ func DoTier1(c *fiber.Ctx) error {
 		"message": "successfully upgraded to Tier 1",
 	})
 }
+
+// func DoTier(c *fiber.Ctx) error {
+// 	// c, cancel := context.WithTimeout(context.TODO(), 5*time.Second)
+// 	// defer cancel()
+
+// 	upgrade := new(models.DoTier1)
+// 	c.BodyParser(&upgrade)
+
+// 	fmt.Println(upgrade.WalletAddress)
+// 	userID, err := primitive.ObjectIDFromHex(upgrade.WalletAddress)
+// 	if err != nil {
+// 		fmt.Println("invalid wallet address")
+// 	}
+// 	fmt.Println(userID)
+
+// 	var user models.User
+// 	user.ID = userID
+// 	user.Bio = upgrade.Bio
+// 	user.XLink = upgrade.XLink
+// 	user.CreatedAt = time.Now()
+// 	user.UpdatedAt = time.Now()
+
+// 	if err := c.BodyParser(&user); err != nil {
+// 		return c.Status(400).JSON(fiber.Map{
+// 			"status":  "error",
+// 			"message": "invalid inputs, please try again",
+// 			"data":    err.Error(),
+// 		})
+// 	}
+
+// 	db := c.Locals("db").(*mongo.Database)
+
+// 	if err := db.Collection(os.Getenv("USER_COLLECTION")).FindOne(c.Context(), fiber.Map{"_id": userID}).Decode(&user); err == nil {
+// 		return c.Status(fiber.StatusConflict).JSON(fiber.Map{
+// 			"error":   true,
+// 			"message": "existing wallet address, cannot continue",
+// 		})
+// 	}
+
+// 	if _, err := db.Collection(os.Getenv("USER_COLLECTION")).InsertOne(c.Context(), user); err != nil {
+// 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+// 			"error":   true,
+// 			"message": "error, refresh application " + err.Error(),
+// 		})
+
+// 	}
+
+// 	return c.Status(fiber.StatusCreated).JSON(fiber.Map{
+// 		"error":   false,
+// 		"message": "User created successfully",
+// 	})
+// }
 
 func UserProfile(c *fiber.Ctx) error {
 	walletAddress := c.Params("id")
@@ -95,6 +146,37 @@ func UserProfile(c *fiber.Ctx) error {
 			CreatedAt:     foundUser.CreatedAt,
 			UpdatedAt:     foundUser.UpdatedAt,
 		},
+	})
+}
+
+func UpdateUserProfile(c *fiber.Ctx) error {
+	var updateData bson.M
+	if err := c.BodyParser(&updateData); err != nil {
+		return c.Status(400).JSON(fiber.Map{
+			"status":  "error",
+			"message": "invalid data, try again",
+			"data":    err,
+		})
+	}
+
+	id := c.Params("id")
+	db := c.Locals("db").(*mongo.Database)
+
+	filter := bson.M{"_id": id}
+
+	profile, err := db.Collection(os.Getenv("USER_COLLECTION")).FindOneAndUpdate(c.Context(), filter, bson.M{"$set": updateData}).DecodeBytes()
+	if err != nil {
+		return c.Status(400).JSON(fiber.Map{
+			"status":  "error",
+			"message": "Error updating profile",
+			"data":    err,
+		})
+	}
+
+	return c.Status(200).JSON(fiber.Map{
+		"status":  "success",
+		"message": "updated!",
+		"data":    profile.String(),
 	})
 }
 
@@ -163,7 +245,7 @@ func UploadUserAvatar(c *fiber.Ctx) error {
 
 	var avatarMetadata bson.M
 
-	if err := db.Collection(os.Getenv("AVATAR_COLLECTION")).FindOne(c.Context(), fiber.Map{"metadata.user_id": user.WalletAddress}).Decode(&avatarMetadata); err == nil {
+	if err := db.Collection(os.Getenv("AVATAR_COLLECTION")).FindOne(c.Context(), fiber.Map{"metadata.user_id": user.ID}).Decode(&avatarMetadata); err == nil {
 		// Delete existing avatar file
 		if err := bucket.Delete(user.ID); err != nil {
 			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
@@ -174,7 +256,7 @@ func UploadUserAvatar(c *fiber.Ctx) error {
 	}
 
 	uploadStream, err := bucket.OpenUploadStream(fileHeader.Filename, options.GridFSUpload().SetMetadata(fiber.Map{
-		"user_id": user.WalletAddress,
+		"user_id": user.ID,
 		"ext":     fileExtension,
 	}))
 	if err != nil {
@@ -184,7 +266,7 @@ func UploadUserAvatar(c *fiber.Ctx) error {
 		})
 	}
 
-	uploadStream.FileID = user.WalletAddress
+	uploadStream.FileID = user.ID
 	defer uploadStream.Close()
 
 	fileSize, err := uploadStream.Write(content)
@@ -202,6 +284,9 @@ func UploadUserAvatar(c *fiber.Ctx) error {
 		"message": "Avatar uploaded successfully",
 	})
 }
+
+func UpdateUserAvatar(c *fiber.Ctx)error{}
+
 
 // func GetUserAvatar(c *fiber.Ctx) error {
 // 	walletAddress := c.Params("id")
