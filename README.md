@@ -158,3 +158,15 @@ request example-
   "tags": ["crip", "lrip"]
 }
 ```
+
+### reserve username - `POST`
+    https://mintyplex-api.onrender.com/api/v1/reserve/
+
+request example-
+
+```
+    {
+        "username": "koxdy",
+        "email": "epphraim@gmail.com"
+    }
+```
