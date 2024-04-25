@@ -22,6 +22,7 @@ func main() {
 
 	routes.UserRoutes(app)
 	routes.ProductRoutes(app)
+	routes.Reserve(app)
 
 	app.Listen(":8081")
 }
