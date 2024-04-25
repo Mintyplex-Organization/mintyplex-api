@@ -141,9 +141,74 @@ func OneProduct(c *fiber.Ctx) error {
 		"message": "Product fetched successfully",
 		"data":    product,
 	})
+
 }
 
 func UpdateProduct(c *fiber.Ctx) error {
+	productID := c.Params("id")
+	userID := c.Params("uid")
+
+	productObjectID, err := primitive.ObjectIDFromHex(productID)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error":   true,
+			"message": "Invalid product ID",
+		})
+	}
+
+	filter := bson.M{"_id": productObjectID, "user_id": userID}
+
+	db := c.Locals("db").(*mongo.Database)
+
+	var existingProduct models.Product
+	if err := db.Collection(os.Getenv("PRODUCT_COLLECTION")).FindOne(c.Context(), filter).Decode(&existingProduct); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"status":  "error",
+			"message": "product does not exist",
+		})
+	}
+	var UpdateProduct models.Product
+	if err := c.BodyParser(&UpdateProduct); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"status":  "error",
+			"message": "Invalid update data for model binding, please refer to customer care",
+			"data":    err,
+		})
+	}
+
+	if existingProduct.UserId != userID {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"status":  "error",
+			"message": "invalid reach, try again",
+		})
+	}
+
+	update := bson.M{"$set": UpdateProduct}
+	productCollection := db.Collection(os.Getenv("PRODUCT_COLLECTION"))
+	if _, err := productCollection.UpdateByID(c.Context(), productObjectID, update); err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"status":  "error",
+			"message": "Error updating product, we can try again",
+			"data":    err,
+		})
+	}
+
+	if err := productCollection.FindOne(c.Context(), filter).Decode(&existingProduct); err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"status":  "error",
+			"message": "error reaching product",
+			"data":    err,
+		})
+	}
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"status":  "success",
+		"message": "Product updated successfully",
+		"data":    existingProduct,
+	})
+}
+
+func UUpdateProduct(c *fiber.Ctx) error {
 	var updateData bson.M
 	if err := c.BodyParser(&updateData); err != nil {
 		return c.Status(400).JSON(fiber.Map{
@@ -183,110 +248,6 @@ func UpdateProduct(c *fiber.Ctx) error {
 	})
 }
 
-func DeleteProduct(c *fiber.Ctx) error {
-
-}
-
-// func modItemUpload(c *fiber.Ctx) error {
-// 	type RequestBody struct {
-// 		WalletAddress string `json:"wallet_address"`
-// 		Type string `json:"type"`
-// 		File interface{} `json:"file"`
-// 	}
-
-// 	var reqBody RequestBody
-// 	err := c.BodyParser(&reqBody)
-// 	if err != nil{
-// 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-// 			"error": true,
-// 			"message": "request is invalid",
-// 		})
-// 	}
-
-// 	if reqBody.Type == "ebook" && !(strings.HasSuffix(reqBody.File.(string), ".pdf") || strings.HasSuffix(reqBody.File.(string), ".epub")){
-// 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-// 			  "error": true,
-//       "message": "Invalid ebook format. Only .pdf and .epub extensions allowed",
-// 		})
-// 	}
-
-// 	db := c.Locals("db").(*mongo.Database)
-
-// 	var user models.User
-// 	err = db.Collection(os.Getenv("USER_COLLECTION")).FindOne(c.Context(), bson.M{"_id": reqBody.WalletAddress}).Decode(user)
-// 	if err != nil{
-// 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-// 			"error": true,
-// 			"message": "incomplete request",
-// 		})
-// 	}
-
-// 	baseUrl := "http://localhost:9980/api/worker/objects/"
-// 	itemPath := fmt.Sprintf("%s/%s/%s", reqBody.WalletAddress, reqBody.Type, "[nameofitem]") // Replace with actual file name handling
-// 	url := baseUrl+itemPath
-// 	fmt.Println(url)
-
-// }
-
-// func ItemUpload(c *fiber.Ctx) error {
-// 	// Authorization token or credentials
-// 	authToken := "Basic UGFzc3dvcmQ6MjQ3YWRtaW5pc3RyYXRpb24="
-
-// 	url := "http://localhost:9980/api/worker/objects/user_products/byon419619/ebook/the-essense-of-habit"
-// 	method := "PUT"
-
-// 	payload := strings.NewReader("file")
-// 	fmt.Println(payload)
-
-// 	client := &http.Client{}
-// 	req, err := http.NewRequest(method, url, payload)
-// 	if err != nil {
-// 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-// 			"error":   true,
-// 			"message": err.Error(),
-// 		})
-// 	}
-
-// 	// Add authorization header
-// 	req.Header.Set("Authorization", authToken)
-// 	req.Header.Set("Content-Type", "text/plain")
-
-// 	res, err := client.Do(req)
-// 	if err != nil {
-// 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-// 			"error":   true,
-// 			"message": err.Error(),
-// 		})
-// 	}
-// 	defer res.Body.Close()
-
-// 	body, err := io.ReadAll(res.Body)
-// 	if err != nil {
-// 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-// 			"error":   true,
-// 			"message": err.Error(),
-// 		})
-// 	}
-// 	fmt.Println(string(body))
-// 	fmt.Println(body)
-
-// 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
-// 		"error":   false,
-// 		"message": "Item uploaded successfully",
-// 	})
-// }
-
-// func UpdateProduct(c *fiber.Ctx)error{
-// 	ctx, cancel := context.WithTimeout(context.TODO(), 50*time.Second)
-// 	defer cancel()
-
-// 	var updateData bson.M
-// 	if err := c.BodyParser(&updateData); err != nil{
-// 		return c.Status(400).JSON(fiber.Map{
-// 			"status": "error",
-// 			"message": "please refresh page and try again",
-// 			"data": nil,
-// 		})
-// 	}
+// func DeleteProduct(c *fiber.Ctx) error {
 
 // }

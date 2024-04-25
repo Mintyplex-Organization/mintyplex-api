@@ -136,3 +136,25 @@ request example-
         `https://mintyplex-api.onrender.com/api/v1/product/`
 this route all gets all existing products in the database
 
+### get one product - `GET`
+        `https://mintyplex-api.onrender.com/api/v1/product/:id`
+this route gets one existing product in the database
+
+
+### update product - `PUT`
+        `https://mintyplex-api.onrender.com/api/v1/product/:id/:uid`
+example `https://mintyplex-api.onrender.com/api/v1/product/66198ca9102c15fb33d65490/bion186n0xxs96rzvnrc8ld66zkywc54xvta0mc5ewx5yvx8tde4xvals8xxekrzs`
+this route updates existing product in the database
+request example-
+
+```
+    {
+  "name": "Rugged Ruddy",
+  "price": 300.99,
+  "discount": 99.0,
+  "description": "This is the tale of the burgundy.",
+  "categories": ["axeless", "dull"],
+  "quantity": 10,
+  "tags": ["crip", "lrip"]
+}
+```

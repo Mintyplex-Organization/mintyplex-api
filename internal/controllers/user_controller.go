@@ -285,7 +285,7 @@ func UploadUserAvatar(c *fiber.Ctx) error {
 	})
 }
 
-func UpdateUserAvatar(c *fiber.Ctx)error{}
+// func UpdateUserAvatar(c *fiber.Ctx)error{}
 
 
 // func GetUserAvatar(c *fiber.Ctx) error {

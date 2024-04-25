@@ -12,8 +12,8 @@ func ProductRoutes(app *fiber.App) {
 	route.Post("/:id", controllers.AddProduct)
 	route.Get("/", controllers.AllProducts)
 	route.Get("/:id", controllers.OneProduct)
-	route.Put("/:id", controllers.UpdateProduct)
-	route.Delete("/:id", controllers.DeleteProduct)
+	route.Put("/:id/:uid", controllers.UpdateProduct)
+	// route.Delete("/:id", controllers.DeleteProduct)
 
 
 	
