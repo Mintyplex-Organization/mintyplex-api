@@ -344,13 +344,16 @@ func GetAvatarById(c *fiber.Ctx) error {
 	}
 
 	baseURL := "https://mintyplex-api.onrender.com/api/v1/user/avatar/"
-	avatarURL := baseURL+userID
 
-	
+	fileName:= avatarMetadata["filename"].(string)
+	fileExtension := avatarMetadata["metadata"].(bson.M)["ext"].(string)
+
+	imgURL := baseURL+fileName+"."+fileExtension
+
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
         "error":   false,
         "message": "Avatar URL retrieved successfully",
-        "url":     avatarURL,
+        "url":     imgURL,
     })
 
 	//unreachable code

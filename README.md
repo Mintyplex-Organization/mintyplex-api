@@ -107,7 +107,7 @@ request example-
 
 users upload their avatars. with any api client of your choice that supports file uploading and under `form` select files(this setup works for thunder client in vs code at the time), form name is `avatar`, go ahead to select image and send request.
 
-### retrieve user avatar - `POST`
+### retrieve user avatar - `GET`
     `https://mintyplex-api.onrender.com/api/v1/user/avatar/:id`
 retrieve users' avatars
 
