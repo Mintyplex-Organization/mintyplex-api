@@ -329,7 +329,39 @@ func UploadUserAvatar(c *fiber.Ctx) error {
 // 	return c.Send(buffer.Bytes())
 // }
 
-func GetAvatarById(c *fiber.Ctx) error {
+func GetAvatarById(c *fiber.Ctx)error{
+	userID := c.Params("id")
+
+	var avatarMetadata bson.M
+
+	db := c.Locals("db").(*mongo.Database)
+
+	if err := db.Collection(os.Getenv("AVATAR_COLLECTION")).FindOne(c.Context(), fiber.Map{"metadata.user_id": userID}).Decode(&avatarMetadata); err != nil {
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+			"error":   true,
+			"message": "Avatar not found",
+		})
+	}
+
+	var buffer bytes.Buffer
+	bucket, _ := gridfs.NewBucket(db, options.GridFSBucket().SetName(os.Getenv("AVATAR_BUCKET")))
+	bucket.DownloadToStream(userID, &buffer)
+
+	utils.SetAvatarHeaders(c, buffer, avatarMetadata["metadata"].(bson.M)["ext"].(string))
+
+	imageURL := "https://mintyplex-api.onrender.com/api/v1/user/avatar/" + userID + "." + avatarMetadata["metadata"].(bson.M)["ext"].(string)
+
+	response := fiber.Map{
+		"error":    false,
+		"message":  "User Avatar retrieved successfully",
+		"url":      imageURL,
+		"imageData": buffer.Bytes(), // This assumes that `buffer.Bytes()` contains the image data
+	}
+
+	return c.JSON(response)
+}
+
+func MGetAvatarById(c *fiber.Ctx) error {
 	userID := c.Params("id")
 
 	var avatarMetadata bson.M
