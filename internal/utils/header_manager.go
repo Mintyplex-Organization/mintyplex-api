@@ -23,3 +23,5 @@ func SetAvatarHeaders(c *fiber.Ctx, buff bytes.Buffer, ext string) error {
 
 	return c.Next()
 }
+
+

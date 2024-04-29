@@ -349,16 +349,7 @@ func GetAvatarById(c *fiber.Ctx)error{
 
 	utils.SetAvatarHeaders(c, buffer, avatarMetadata["metadata"].(bson.M)["ext"].(string))
 
-	imageURL := "https://mintyplex-api.onrender.com/api/v1/user/avatar/" + userID + "." + avatarMetadata["metadata"].(bson.M)["ext"].(string)
-
-	response := fiber.Map{
-		"error":    false,
-		"message":  "User Avatar retrieved successfully",
-		"url":      imageURL,
-		"imageData": buffer.Bytes(), // This assumes that `buffer.Bytes()` contains the image data
-	}
-
-	return c.JSON(response)
+	return c.Send(buffer.Bytes())
 }
 
 func MGetAvatarById(c *fiber.Ctx) error {
@@ -384,7 +375,7 @@ func MGetAvatarById(c *fiber.Ctx) error {
 
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
         "error":   false,
-        "message": "The Avatar URL has been retrieved successfully",
+        "message": "User Avatar URL retrieved successfully",
         "url":     imgURL,
     })
 
