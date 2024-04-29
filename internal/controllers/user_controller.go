@@ -331,12 +331,6 @@ func UploadUserAvatar(c *fiber.Ctx) error {
 
 func GetAvatarById(c *fiber.Ctx) error {
 	userID := c.Params("id")
-	// if err != nil {
-	// 	return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-	// 		"error":   true,
-	// 		"message": "Invalid user ID",
-	// 	})
-	// }
 
 	var avatarMetadata bson.M
 
@@ -349,6 +343,17 @@ func GetAvatarById(c *fiber.Ctx) error {
 		})
 	}
 
+	baseURL := "https://mintyplex-api.onrender.com/api/v1/user/avatar/"
+	avatarURL := baseURL+userID
+
+	
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+        "error":   false,
+        "message": "Avatar URL retrieved successfully",
+        "url":     avatarURL,
+    })
+
+	//unreachable code
 	bucket, _ := gridfs.NewBucket(db, options.GridFSBucket().SetName(os.Getenv("AVATAR_BUCKET")))
 
 	var buffer bytes.Buffer
@@ -357,6 +362,9 @@ func GetAvatarById(c *fiber.Ctx) error {
 	utils.SetAvatarHeaders(c, buffer, avatarMetadata["metadata"].(bson.M)["ext"].(string))
 
 	return c.Send(buffer.Bytes())
+
+	
+	
 }
 
 func DeleteUserAvatar(c *fiber.Ctx) error {

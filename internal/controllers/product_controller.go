@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"mintyplex-api/internal/models"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/go-playground/validator/v10"
@@ -12,9 +13,107 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/gridfs"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 func AddProduct(c *fiber.Ctx) error {
+	user := c.Params("id")
+
+	validate := validator.New()
+	db := c.Locals("db").(*mongo.Database)
+
+	addProd := new(models.AddProduct)
+	if err := c.BodyParser(&addProd); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error":   true,
+			"message": "invalid request data " + err.Error(),
+		})
+	}
+
+	if err := validate.Struct(addProd); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error":   true,
+			"message": "validation error: " + err.Error(),
+		})
+	}
+
+	fileHeadr, err := c.FormFile("image")
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error":   true,
+			"message": "Image header is not valid: " + err.Error(),
+		})
+	}
+
+	fileExtension := strings.ToLower(fileHeadr.Filename[strings.LastIndex(fileHeadr.Filename, "."):])
+
+	if fileExtension != ".jpg" && fileExtension != ".jpeg" && fileExtension != ".png" {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error":   true,
+			"message": "Invalid file type",
+		})
+	}
+
+	file, err := fileHeadr.Open()
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error":   true,
+			"message": "failed to open image file" + err.Error(),
+		})
+	}
+	defer file.Close()
+
+	bucket, err := gridfs.NewBucket(db, options.GridFSBucket().SetName(os.Getenv(("COVER_BUCKET"))))
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error":   true,
+			"message": "failed to create bucket: " + err.Error(),
+		})
+	}
+
+	uploadStream, err := bucket.OpenUploadStream(fileHeadr.Filename, options.GridFSUpload().SetMetadata(fiber.Map{
+		"product_id": user,
+		"ext":        fileExtension,
+	}))
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error":   true,
+			"message": "failed to open upload stream " + err.Error(),
+		})
+	}
+	defer uploadStream.Close()
+
+	product := &models.Product{
+		UserId:      user,
+		Name:        addProd.Name,
+		Price:       addProd.Price,
+		Discount:    addProd.Discount,
+		Description: addProd.Description,
+		Categories:  addProd.Categories,
+		Quantity:    addProd.Quantity,
+		Tags:        addProd.Tags,
+		CoverImage:  fileHeadr.Filename,
+		CreatedAt:   time.Now().Unix(),
+		UpdatedAt:   time.Now().Unix(),
+	}
+
+	response, err := db.Collection(os.Getenv("PRODUCT_COLLECTION")).InsertOne(c.Context(), product)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error":   true,
+			"message": "Internal Server Error",
+		})
+	}
+
+	return c.Status(fiber.StatusCreated).JSON(fiber.Map{
+		"error":   false,
+		"message": "Product Created successfully",
+		"task":    response.InsertedID,
+	})
+}
+
+func MAddProduct(c *fiber.Ctx) error {
 	// user := c.Locals("user").(*models.User)
 	user := c.Params("id")
 
@@ -25,7 +124,7 @@ func AddProduct(c *fiber.Ctx) error {
 	validate := validator.New()
 	db := c.Locals("db").(*mongo.Database)
 
-	var usr models.User
+	var usr models.User //check
 	err := db.Collection(os.Getenv("USER_COLLECTION")).FindOne(c.Context(), bson.M{"_id": user}).Decode(&usr)
 	if err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
@@ -73,9 +172,9 @@ func AddProduct(c *fiber.Ctx) error {
 	}
 
 	return c.Status(fiber.StatusCreated).JSON(fiber.Map{
-		"error":   false,
-		"message": "Product Created successfully",
-		"task":    response.InsertedID,
+		"error":    false,
+		"message":  "Product Created successfully",
+		"response": response.InsertedID,
 	})
 
 }
