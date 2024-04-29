@@ -384,7 +384,7 @@ func MGetAvatarById(c *fiber.Ctx) error {
 
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
         "error":   false,
-        "message": "User Avatar URL retrieved successfully",
+        "message": "The Avatar URL has been retrieved successfully",
         "url":     imgURL,
     })
 
