@@ -158,7 +158,7 @@ func AddProduct(c *fiber.Ctx) error {
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error":   true,
-			"message": "Internal Server Error",
+			"message": "Internal Server Error When Trying To Insert Product Details" + err.Error(),
 		})
 	}
 

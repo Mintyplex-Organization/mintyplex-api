@@ -55,6 +55,7 @@ func DoTier1(c *fiber.Ctx) error {
 
 func UserProfile(c *fiber.Ctx) error {
 	walletAddress := c.Params("id")
+	// baseURL := 
 
 	fmt.Println(walletAddress)
 
@@ -312,7 +313,7 @@ func UpdateUserAvatar(c *fiber.Ctx) error {
 
 	var avatarMetadata bson.M
 	if err := db.Collection(os.Getenv("AVATAR_COLLECTION")).FindOne(c.Context(), fiber.Map{"metadata.user_id": userID}).Decode(&avatarMetadata); err == nil {
-		
+
 	}
 
 	// Upload new avatar file
