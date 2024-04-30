@@ -7,8 +7,7 @@ import (
 )
 
 type AddProduct struct {
-	// ID          primitive.ObjectID `bson:"_id,omitempty"`
-	// CoverImage  string             `bson:"cover_image"`
+	CoverImage  string    `bson:"image"`
 	Name        string    `bson:"name"`
 	Price       float64   `bson:"price"`
 	Discount    float64   `bson:"discount"`

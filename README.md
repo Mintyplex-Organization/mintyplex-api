@@ -117,21 +117,23 @@ retrieve users' avatars
 
         `https://mintyplex-api.onrender.com/api/v1/product/:id`
 
-`*the ':id' is the user's id which is their wallet address`
+`*the ':id' is the user's id which is their wallet address`. to parse/pass this request, recommended is Postman, use `form-data` under the `Body`, key and value example as follows
 
 request example-
-
-```
     {
-  "name": "Rugged Ruddy",
-  "price": 300.99,
-  "discount": 99.0,
-  "description": "This is the tale of the burgundy.",
-  "categories": ["axeless", "dull"],
-  "quantity": 10,
-  "tags": ["crip", "lrip"]
+  name: Rugged Ruddy
+  price: 300.99
+  discount: 99.0
+  description: This is the tale of the burgundy.
+  categories: art
+  categories: forever
+  quantity: 10,
+  tags: crip
+  tags: lrip
+  //to select image, select key type as file and select image
+  image: <selected file>
 }
-```
+
 ### get all products - `GET`
         `https://mintyplex-api.onrender.com/api/v1/product/`
 this route all gets all existing products in the database

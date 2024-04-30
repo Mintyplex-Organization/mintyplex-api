@@ -53,58 +53,6 @@ func DoTier1(c *fiber.Ctx) error {
 	})
 }
 
-// func DoTier(c *fiber.Ctx) error {
-// 	// c, cancel := context.WithTimeout(context.TODO(), 5*time.Second)
-// 	// defer cancel()
-
-// 	upgrade := new(models.DoTier1)
-// 	c.BodyParser(&upgrade)
-
-// 	fmt.Println(upgrade.WalletAddress)
-// 	userID, err := primitive.ObjectIDFromHex(upgrade.WalletAddress)
-// 	if err != nil {
-// 		fmt.Println("invalid wallet address")
-// 	}
-// 	fmt.Println(userID)
-
-// 	var user models.User
-// 	user.ID = userID
-// 	user.Bio = upgrade.Bio
-// 	user.XLink = upgrade.XLink
-// 	user.CreatedAt = time.Now()
-// 	user.UpdatedAt = time.Now()
-
-// 	if err := c.BodyParser(&user); err != nil {
-// 		return c.Status(400).JSON(fiber.Map{
-// 			"status":  "error",
-// 			"message": "invalid inputs, please try again",
-// 			"data":    err.Error(),
-// 		})
-// 	}
-
-// 	db := c.Locals("db").(*mongo.Database)
-
-// 	if err := db.Collection(os.Getenv("USER_COLLECTION")).FindOne(c.Context(), fiber.Map{"_id": userID}).Decode(&user); err == nil {
-// 		return c.Status(fiber.StatusConflict).JSON(fiber.Map{
-// 			"error":   true,
-// 			"message": "existing wallet address, cannot continue",
-// 		})
-// 	}
-
-// 	if _, err := db.Collection(os.Getenv("USER_COLLECTION")).InsertOne(c.Context(), user); err != nil {
-// 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-// 			"error":   true,
-// 			"message": "error, refresh application " + err.Error(),
-// 		})
-
-// 	}
-
-// 	return c.Status(fiber.StatusCreated).JSON(fiber.Map{
-// 		"error":   false,
-// 		"message": "User created successfully",
-// 	})
-// }
-
 func UserProfile(c *fiber.Ctx) error {
 	walletAddress := c.Params("id")
 

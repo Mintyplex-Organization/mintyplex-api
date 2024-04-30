@@ -23,8 +23,9 @@ func AddProduct(c *fiber.Ctx) error {
 	validate := validator.New()
 	db := c.Locals("db").(*mongo.Database)
 
-	addProd := new(models.AddProduct)
-	if err := c.BodyParser(&addProd); err != nil {
+	// addProd := new(models.AddProduct)
+	addProd := &models.AddProduct{}
+	if err := c.BodyParser(addProd); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error":   true,
 			"message": "invalid request data " + err.Error(),

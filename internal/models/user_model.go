@@ -21,6 +21,6 @@ type User struct {
 	XLink         string             `bson:"x_link,omitempty"`
 	Bio           string             `bson:"bio,omitempty"`
 	Avatar        string             `bson:"avatar"`
-	CreatedAt     time.Time              `bson:"created_at"`
-	UpdatedAt     time.Time              `bson:"updated_at"`
+	CreatedAt     time.Time          `bson:"created_at"`
+	UpdatedAt     time.Time          `bson:"updated_at"`
 }
