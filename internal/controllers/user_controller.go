@@ -55,7 +55,7 @@ func DoTier1(c *fiber.Ctx) error {
 
 func UserProfile(c *fiber.Ctx) error {
 	walletAddress := c.Params("id")
-	// baseURL := 
+	// baseURL :=
 
 	fmt.Println(walletAddress)
 
@@ -235,6 +235,110 @@ func UploadUserAvatar(c *fiber.Ctx) error {
 }
 
 func UpdateUserAvatar(c *fiber.Ctx) error {
+	user := c.Params("id")
+
+	db := c.Locals("db").(*mongo.Database)
+
+	// Fetch user using wallet address
+	var usr models.User
+	err := db.Collection(os.Getenv("USER_COLLECTION")).FindOne(c.Context(), bson.M{"_id": user}).Decode(&usr)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error":   true,
+			"message": "User not found " + err.Error(),
+		})
+	}
+
+	fileHeader, err := c.FormFile("avatar")
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error":   true,
+			"message": "file header is not type of avatar " + err.Error(),
+		})
+	}
+
+	if fileHeader.Size > 1024*1024 {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error":   true,
+			"message": "File size too large, max 1MB allowed",
+		})
+	}
+
+	fileExtension := strings.ToLower(fileHeader.Filename[strings.LastIndex(fileHeader.Filename, "."):])
+
+	if fileExtension != ".jpg" && fileExtension != ".jpeg" && fileExtension != ".png" {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error":   true,
+			"message": "Invalid file type",
+		})
+	}
+
+	file, err := fileHeader.Open()
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error":   true,
+			"message": "Internal server error",
+		})
+	}
+
+	content, err := io.ReadAll(file)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error":   true,
+			"message": "Internal server error",
+		})
+	}
+
+	bucket, err := gridfs.NewBucket(db, options.GridFSBucket().SetName(os.Getenv("AVATAR_BUCKET")))
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error":   true,
+			"message": "Internal server error",
+		})
+	}
+
+	// Check if user already has an avatar
+	var existingAvatarMetadata bson.M
+	err = db.Collection(os.Getenv("AVATAR_COLLECTION")).FindOne(c.Context(), fiber.Map{"metadata.user_id": user}).Decode(&existingAvatarMetadata)
+	if err == nil {
+		// Delete existing avatar file
+		if err := bucket.Delete(user); err != nil {
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+				"error":   true,
+				"message": "Internal server error",
+			})
+		}
+	}
+
+	uploadStream, err := bucket.OpenUploadStream(fileHeader.Filename, options.GridFSUpload().SetMetadata(fiber.Map{
+		"user_id": user,
+		"ext":     fileExtension,
+	}))
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error":   true,
+			"message": "Internal server error",
+		})
+	}
+
+	uploadStream.FileID = user
+	defer uploadStream.Close()
+
+	_, err = uploadStream.Write(content)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error":   true,
+			"message": "Internal server error",
+		})
+	}
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"error":   false,
+		"message": "Avatar updated successfully",
+	})
+}
+
+func MUpdateUserAvatar(c *fiber.Ctx) error {
 	// Get user ID from request parameters
 	userID := c.Params("id")
 
