@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"io"
 	"log"
@@ -84,22 +85,58 @@ func UserProfile(c *fiber.Ctx) error {
 	// avatarURL := baseURL + "/api/v1/user/avatar/" + foundUser.WalletAddress
 	var avatarURL string
 	avatarID := foundUser.WalletAddress
-	if avatarID != ""{
+	if avatarID != "" {
 		avatarURL = "https://mintyplex-api.onrender.com/api/v1/user/avatar/" + avatarID
 	}
 
 	fmt.Println(avatarID)
 	fmt.Println(avatarURL)
 
+	var userProducts []models.Product
+	cursor, err := db.Collection(os.Getenv("PRODUCT_COLLECTION")).Find(c.Context(), bson.M{"user_id": walletAddress})
+	fmt.Println(cursor)
+	fmt.Println(walletAddress)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error":   true,
+			"message": "error fetching this user's products",
+		})
+
+	}
+	defer cursor.Close(c.Context())
+
+	if cursor.Next(c.Context()) != true {
+		return c.Status(200).JSON(fiber.Map{
+			"error":   false,
+			"message": "User Profile",
+			"user": models.UserProfileResponse{
+				WalletAddress: foundUser.WalletAddress,
+				XLink:         foundUser.XLink,
+				Bio:           foundUser.Bio,
+				Avatar:        avatarURL,
+				Products:      []models.Product{},
+				CreatedAt:     foundUser.CreatedAt,
+				UpdatedAt:     foundUser.UpdatedAt,
+			},
+		})
+	}
+
+	if err := cursor.All(c.Context(), &userProducts); err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error":   true,
+			"message": "Error retreiving user products",
+		})
+	}
+
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"error":   false,
 		"message": "User Profile",
-		"user": models.UserProfile{
+		"user": models.UserProfileResponse{
 			WalletAddress: foundUser.WalletAddress,
-			ID:            foundUser.ID.Hex(),
 			XLink:         foundUser.XLink,
 			Bio:           foundUser.Bio,
 			Avatar:        avatarURL,
+			Products:      userProducts,
 			CreatedAt:     foundUser.CreatedAt,
 			UpdatedAt:     foundUser.UpdatedAt,
 		},
@@ -394,5 +431,35 @@ func DeleteUserAvatar(c *fiber.Ctx) error {
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"error":   false,
 		"message": "Avatar deleted successfully",
+	})
+}
+
+func GetUsers(c *fiber.Ctx) error {
+	ctx, cancel := context.WithTimeout(context.TODO(), 35*time.Second)
+	defer cancel()
+	db := c.Locals("db").(*mongo.Database)
+	collection := db.Collection(os.Getenv("USER_COLLECTION"))
+	cursor, err := collection.Find(ctx, bson.M{})
+	if err != nil {
+		return c.Status(400).JSON(fiber.Map{
+			"status":  "error",
+			"message": "error getting users",
+			"data":    err,
+		})
+	}
+
+	var users []models.User
+	if err := cursor.All(ctx, &users); err != nil {
+		return c.Status(400).JSON(fiber.Map{
+			"status":  "error",
+			"message": "error fetching users",
+			"data":    err,
+		})
+	}
+
+	return c.Status(200).JSON(fiber.Map{
+		"status":  "success",
+		"message": "users retrieved",
+		"data":    users,
 	})
 }

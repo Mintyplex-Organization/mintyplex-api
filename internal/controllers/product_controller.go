@@ -94,52 +94,6 @@ func AddProduct(c *fiber.Ctx) error {
 		uploadedFiles = append(uploadedFiles, uniqueFilename)
 	}
 
-	// fileHeadr, err := c.FormFile("image")
-	// if err != nil {
-	// 	return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-	// 		"error":   true,
-	// 		"message": "Image header is not valid: " + err.Error(),
-	// 	})
-	// }
-
-	// fileExtension := strings.ToLower(fileHeadr.Filename[strings.LastIndex(fileHeadr.Filename, "."):])
-
-	// if fileExtension != ".jpg" && fileExtension != ".jpeg" && fileExtension != ".png" {
-	// 	return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-	// 		"error":   true,
-	// 		"message": "Invalid file type",
-	// 	})
-	// }
-
-	// file, err := fileHeadr.Open()
-	// if err != nil {
-	// 	return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-	// 		"error":   true,
-	// 		"message": "failed to open image file" + err.Error(),
-	// 	})
-	// }
-	// defer file.Close()
-
-	// bucket, err := gridfs.NewBucket(db, options.GridFSBucket().SetName(os.Getenv(("COVER_BUCKET"))))
-	// if err != nil {
-	// 	return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-	// 		"error":   true,
-	// 		"message": "failed to create bucket: " + err.Error(),
-	// 	})
-	// }
-
-	// uploadStream, err := bucket.OpenUploadStream(fileHeadr.Filename, options.GridFSUpload().SetMetadata(fiber.Map{
-	// 	"product_id": user,
-	// 	"ext":        fileExtension,
-	// }))
-	// if err != nil {
-	// 	return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-	// 		"error":   true,
-	// 		"message": "failed to open upload stream " + err.Error(),
-	// 	})
-	// }
-	// defer uploadStream.Close()
-
 	product := &models.Product{
 		UserId:      user,
 		Name:        addProd.Name,
