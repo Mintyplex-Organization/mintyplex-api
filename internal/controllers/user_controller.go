@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"bytes"
+	"fmt"
 	"io"
 	"log"
 	"mintyplex-api/internal/models"
@@ -82,10 +83,13 @@ func UserProfile(c *fiber.Ctx) error {
 
 	// avatarURL := baseURL + "/api/v1/user/avatar/" + foundUser.WalletAddress
 	var avatarURL string
-	avatarID := foundUser.Avatar
+	avatarID := foundUser.WalletAddress
 	if avatarID != ""{
 		avatarURL = "https://mintyplex-api.onrender.com/api/v1/user/avatar/" + avatarID
 	}
+
+	fmt.Println(avatarID)
+	fmt.Println(avatarURL)
 
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"error":   false,
