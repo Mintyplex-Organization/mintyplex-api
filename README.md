@@ -49,6 +49,9 @@ AVATAR_COLLECTION="avatars.files"
 
 ## user endpoints
 
+### get all users - `GET`
+    `https://mintyplex-api.onrender.com/api/v1/user/users/`
+
 ### add user profile - `POST`
 
     https://mintyplex-api.onrender.com/api/v1/user/profile/
