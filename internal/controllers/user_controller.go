@@ -54,7 +54,7 @@ func DoTier1(c *fiber.Ctx) error {
 
 func UserProfile(c *fiber.Ctx) error {
 	walletAddress := c.Params("id")
-	baseURL := "https://mintyplex-api.onrender.com"
+	// baseURL := "https://mintyplex-api.onrender.com"
 
 	db := c.Locals("db").(*mongo.Database)
 
@@ -80,7 +80,12 @@ func UserProfile(c *fiber.Ctx) error {
 		return err
 	}
 
-	avatarURL := baseURL + "/api/v1/user/avatar/" + foundUser.WalletAddress
+	// avatarURL := baseURL + "/api/v1/user/avatar/" + foundUser.WalletAddress
+	var avatarURL string
+	avatarID := foundUser.Avatar
+	if avatarID != ""{
+		avatarURL = "https://mintyplex-api.onrender.com/api/v1/user/avatar/" + avatarID
+	}
 
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"error":   false,
