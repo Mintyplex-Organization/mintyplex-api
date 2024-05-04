@@ -11,7 +11,7 @@ func UserRoutes(app *fiber.App) {
 	route := app.Group("/api/v1/user")
 
 	// <--- user profile --->
-	route.Post("/profile", controllers.DoTier1)
+	route.Post("/profile/", controllers.DoTier1)
 	route.Get("/profile/:id", controllers.UserProfile)
 	route.Put("/profile/:id", controllers.UpdateUserProfile)
 	route.Get("/users", controllers.GetUsers)

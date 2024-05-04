@@ -25,7 +25,6 @@ func AddProduct(c *fiber.Ctx) error {
 	validate := validator.New()
 	db := c.Locals("db").(*mongo.Database)
 
-	// addProd := new(models.AddProduct)
 	addProd := &models.AddProduct{}
 	if err := c.BodyParser(addProd); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
@@ -41,7 +40,7 @@ func AddProduct(c *fiber.Ctx) error {
 		})
 	}
 
-	var uploadedFiles []string
+	// var uploadedFiles string
 
 	form, err := c.MultipartForm()
 	if err != nil {
@@ -90,8 +89,6 @@ func AddProduct(c *fiber.Ctx) error {
 				"message": "Failed to copy file data to GridFS upload stream: " + err.Error(),
 			})
 		}
-
-		uploadedFiles = append(uploadedFiles, uniqueFilename)
 	}
 
 	product := &models.Product{
@@ -103,7 +100,7 @@ func AddProduct(c *fiber.Ctx) error {
 		Categories:  addProd.Categories,
 		Quantity:    addProd.Quantity,
 		Tags:        addProd.Tags,
-		CoverImage:  uploadedFiles,
+		// CoverImage:  uploadedFiles,
 		CreatedAt:   time.Now().Unix(),
 		UpdatedAt:   time.Now().Unix(),
 	}
