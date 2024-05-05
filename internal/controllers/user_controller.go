@@ -56,7 +56,6 @@ func DoTier1(c *fiber.Ctx) error {
 
 func UserProfile(c *fiber.Ctx) error {
 	walletAddress := c.Params("id")
-	// baseURL := "https://mintyplex-api.onrender.com"
 
 	db := c.Locals("db").(*mongo.Database)
 
@@ -82,15 +81,12 @@ func UserProfile(c *fiber.Ctx) error {
 		return err
 	}
 
-	// avatarURL := baseURL + "/api/v1/user/avatar/" + foundUser.WalletAddress
 	var avatarURL string
+
 	avatarID := foundUser.WalletAddress
 	if avatarID != "" {
 		avatarURL = "https://mintyplex-api.onrender.com/api/v1/user/avatar/" + avatarID
 	}
-
-	fmt.Println(avatarID)
-	fmt.Println(avatarURL)
 
 	var userProducts []models.Product
 	cursor, err := db.Collection(os.Getenv("PRODUCT_COLLECTION")).Find(c.Context(), bson.M{"user_id": walletAddress})
@@ -122,7 +118,6 @@ func UserProfile(c *fiber.Ctx) error {
 		})
 
 	}
-	fmt.Println("x_link ", foundUser.XLink)
 
 	if err := cursor.All(c.Context(), &userProducts); err != nil {
 		fmt.Println(&userProducts)
@@ -442,8 +437,11 @@ func DeleteUserAvatar(c *fiber.Ctx) error {
 func GetUsers(c *fiber.Ctx) error {
 	ctx, cancel := context.WithTimeout(context.TODO(), 35*time.Second)
 	defer cancel()
+
 	db := c.Locals("db").(*mongo.Database)
 	collection := db.Collection(os.Getenv("USER_COLLECTION"))
+	prodColl := db.Collection(os.Getenv("PRODUCT_COLLECTION"))
+
 	cursor, err := collection.Find(ctx, bson.M{})
 	if err != nil {
 		return c.Status(400).JSON(fiber.Map{
@@ -453,18 +451,59 @@ func GetUsers(c *fiber.Ctx) error {
 		})
 	}
 
-	var users []models.User
-	if err := cursor.All(ctx, &users); err != nil {
-		return c.Status(400).JSON(fiber.Map{
-			"status":  "error",
-			"message": "error fetching users",
-			"data":    err,
-		})
+	defer cursor.Close(ctx)
+
+	var usersProducts []map[string]interface{}
+
+	for cursor.Next(ctx) {
+		var user models.User
+		if err := cursor.Decode(&user); err != nil {
+			return c.Status(400).JSON(fiber.Map{
+				"status":  "error",
+				"message": "error decoding user",
+				"data":    err.Error(),
+			})
+		}
+
+		prodCur, err := prodColl.Find(ctx, bson.M{"user_id": user.WalletAddress})
+		if err != nil {
+			return c.Status(400).JSON(fiber.Map{
+				"status":  "error",
+				"message": "error getting user products for " + user.WalletAddress,
+				"data":    err.Error(),
+			})
+		}
+		defer prodCur.Close(ctx)
+
+		var userProd []models.Product
+		if err := prodCur.All(ctx, &userProd); err != nil {
+			return c.Status(400).JSON(fiber.Map{
+				"status":  "error",
+				"message": "error fetching products for user " + user.WalletAddress,
+				"data":    err.Error(),
+			})
+		}
+
+		userData := map[string]interface{}{
+			"userProfile": user,
+			"products":    userProd,
+		}
+		usersProducts = append(usersProducts, userData)
+
 	}
+
+	// var users []models.User
+	// if err := cursor.All(ctx, &users); err != nil {
+	// 	return c.Status(400).JSON(fiber.Map{
+	// 		"status":  "error",
+	// 		"message": "error fetching users",
+	// 		"data":    err,
+	// 	})
+	// }
 
 	return c.Status(200).JSON(fiber.Map{
 		"status":  "success",
 		"message": "users retrieved",
-		"data":    users,
+		"data":    usersProducts,
 	})
 }
