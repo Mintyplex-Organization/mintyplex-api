@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"mintyplex-api/internal/models"
 	"os"
@@ -39,8 +40,6 @@ func AddProduct(c *fiber.Ctx) error {
 		})
 	}
 
-	var uploadedFiles string
-
 	form, err := c.MultipartForm()
 	if err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
@@ -49,6 +48,11 @@ func AddProduct(c *fiber.Ctx) error {
 		})
 	}
 	files := form.File["image"]
+
+	var uploadedFiles string
+
+	productID := primitive.NewObjectID()
+
 	for _, fileHeadr := range files {
 		file, err := fileHeadr.Open()
 		if err != nil {
@@ -61,6 +65,7 @@ func AddProduct(c *fiber.Ctx) error {
 
 		fileExtension := filepath.Ext(fileHeadr.Filename)
 		uniqueFilename := uuid.New().String() + fileExtension
+		// uploadedFiles = append(uploadedFiles, uniqueFilename)
 
 		bucket, err := gridfs.NewBucket(db, options.GridFSBucket().SetName(os.Getenv("COVER_BUCKET")))
 		if err != nil {
@@ -71,7 +76,7 @@ func AddProduct(c *fiber.Ctx) error {
 		}
 
 		uploadStream, err := bucket.OpenUploadStream(uniqueFilename, options.GridFSUpload().SetMetadata(fiber.Map{
-			"product_id": user,
+			"product_id": productID,
 			"ext":        fileExtension,
 		}))
 		if err != nil {
@@ -90,7 +95,10 @@ func AddProduct(c *fiber.Ctx) error {
 		}
 	}
 
+	fmt.Println(uploadedFiles)
+
 	product := &models.Product{
+		ID: productID,
 		UserId:      user,
 		Name:        addProd.Name,
 		Price:       addProd.Price,
@@ -100,10 +108,12 @@ func AddProduct(c *fiber.Ctx) error {
 		Quantity:    addProd.Quantity,
 		Tags:        addProd.Tags,
 		CoverImage:  uploadedFiles,
-		CreatedAt: time.Now().Unix(),
-		UpdatedAt: time.Now().Unix(),
+		CreatedAt:   time.Now().Unix(),
+		UpdatedAt:   time.Now().Unix(),
 	}
 
+	fmt.Println(product.CoverImage)
+	fmt.Println(product.Quantity)
 	response, err := db.Collection(os.Getenv("PRODUCT_COLLECTION")).InsertOne(c.Context(), product)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
@@ -167,13 +177,16 @@ func OneProduct(c *fiber.Ctx) error {
 
 	var product models.Product
 	db := c.Locals("db").(*mongo.Database)
+
 	if err := db.Collection(os.Getenv("PRODUCT_COLLECTION")).FindOne(ctx, bson.M{"_id": productId}).Decode(&product); err != nil {
 		return c.Status(400).JSON(fiber.Map{
 			"status":  "error",
-			"message": "link is broken",
-			"data":    err,
+			"message": "404 - Product Not Found",
+			"data":    err.Error(),
 		})
 	}
+	fmt.Println(product.CoverImage)
+	fmt.Println(product.Name)
 
 	return c.Status(200).JSON(fiber.Map{
 		"status":  "success",
