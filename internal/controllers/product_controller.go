@@ -1,10 +1,12 @@
 package controllers
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"io"
 	"mintyplex-api/internal/models"
+	"mintyplex-api/internal/utils"
 	"os"
 	"path/filepath"
 	"time"
@@ -49,8 +51,9 @@ func AddProduct(c *fiber.Ctx) error {
 	}
 	files := form.File["image"]
 
-	var uploadedFiles string
+	// var uploadedFiles []string
 
+	var imageURL string
 	productID := primitive.NewObjectID()
 
 	for _, fileHeadr := range files {
@@ -93,12 +96,14 @@ func AddProduct(c *fiber.Ctx) error {
 				"message": "Failed to copy file data to GridFS upload stream: " + err.Error(),
 			})
 		}
+
+		imageURL = fmt.Sprintf("%s/api/v1/product/cover/%s", os.Getenv("BASE_URL"), productID.Hex())
 	}
 
-	fmt.Println(uploadedFiles)
+	fmt.Println(imageURL)
 
 	product := &models.Product{
-		ID: productID,
+		ID:          productID,
 		UserId:      user,
 		Name:        addProd.Name,
 		Price:       addProd.Price,
@@ -107,7 +112,7 @@ func AddProduct(c *fiber.Ctx) error {
 		Categories:  addProd.Categories,
 		Quantity:    addProd.Quantity,
 		Tags:        addProd.Tags,
-		CoverImage:  uploadedFiles,
+		CoverImage:  imageURL,
 		CreatedAt:   time.Now().Unix(),
 		UpdatedAt:   time.Now().Unix(),
 	}
@@ -127,6 +132,56 @@ func AddProduct(c *fiber.Ctx) error {
 		"message": "Product Created successfully",
 		"task":    response.InsertedID,
 	})
+}
+
+func GetProductCover(c *fiber.Ctx) error {
+	productID := c.Params("id")
+	fmt.Println("Product ID:", productID)
+
+	var coverMetadata bson.M
+
+	db := c.Locals("db").(*mongo.Database)
+
+	// Convert the product ID string to an ObjectId
+	objectID, err := primitive.ObjectIDFromHex(productID)
+	if err != nil {
+		fmt.Println("Invalid product ID:", err)
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error":   true,
+			"message": "Invalid product ID",
+			"data":    err.Error(),
+		})
+	}
+
+	// Query the document using the product ID
+	if err := db.Collection(os.Getenv("COVER_COLLECTION")).FindOne(c.Context(), bson.M{"metadata.product_id": objectID}).Decode(&coverMetadata); err != nil {
+		fmt.Println("Error fetching cover metadata:", err)
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+			"error":   true,
+			"message": "Cover metadata retrieval error",
+			"data":    err.Error(),
+		})
+	}
+
+	fmt.Println("Cover Metadata:", coverMetadata)
+
+	var buffer bytes.Buffer
+	bucket, _ := gridfs.NewBucket(db, options.GridFSBucket().SetName(os.Getenv("COVER_BUCKET")))
+	_, err = bucket.DownloadToStreamByName(coverMetadata["filename"].(string), &buffer)
+	if err != nil {
+		fmt.Println("Error downloading image:", err)
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error":   true,
+			"message": "Error downloading image",
+			"data":    err.Error(),
+		})
+	}
+
+	// Set response headers
+	utils.SetAvatarHeaders(c, buffer, coverMetadata["metadata"].(bson.M)["ext"].(string))
+
+	// Return the image data as the response body
+	return c.Send(buffer.Bytes())
 }
 
 func AllProducts(c *fiber.Ctx) error {
@@ -185,8 +240,6 @@ func OneProduct(c *fiber.Ctx) error {
 			"data":    err.Error(),
 		})
 	}
-	fmt.Println(product.CoverImage)
-	fmt.Println(product.Name)
 
 	return c.Status(200).JSON(fiber.Map{
 		"status":  "success",
