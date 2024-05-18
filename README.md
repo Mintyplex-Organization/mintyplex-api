@@ -12,10 +12,10 @@ this handles Mintyplex's authentication, authorization, users, storage, etc.
 ## user management 🚧
 
 - Design user profile functionality: This allows users to view and edit their profile information (e.g., name, bio, profile picture). ✔️
-- Implement profile update functionality: This allows users to modify their profile information and store the changes securely. 🚧
-- Integrate profile picture upload/management (optional): This allows users to upload and manage their profile pictures. 🚧
+- Implement profile update functionality: This allows users to modify their profile information and store the changes securely. ✔️
+- Integrate profile picture upload/management (optional): This allows users to upload and manage their profile pictures. ✔️
 
-## product management 🚧
+## product management ✔️
 
 ## user dashboard 📋
 
@@ -28,6 +28,7 @@ slide to:
 - [environment setup](#environment-setup)
 - [api endpoints](#api-endpoints)
 - [user endpoints](#user-endpoints)
+- [product endpoints](#product-endpoints)
 
 ## environment setup
 
@@ -37,20 +38,30 @@ In the root directory of the application, create an 'app.env' file with the foll
     # MONGO DB SRV Record
 MONGODB_SRV_RECORD="mongodb+srv://minty:plexerbaby@mpacluster0.b8ire6p.mongodb.net/?retryWrites=true&w=majority&appName=mpacluster0"
 
-    # DB Variables
+BASE_URL="https://mintyplex-api.onrender.com"
+
+# DB Variables
 MONGODB_DATABASE="minty"
 USER_COLLECTION="users"
+PRODUCT_COLLECTION="products"
+USERNAME_COLLECTION="username"
 
 AVATAR_BUCKET="avatars"
 AVATAR_COLLECTION="avatars.files"
+
+COVER_BUCKET="covers"
+COVER_COLLECTION="covers.files"
+
+JWT_SECRET_KEY="ThisIsMySecretKey"
+
+CLOUDINARY_API_SECRET="HlqD4kGIszGt3wfqVe4RzSDjJkI"
+CLOUDINARY_CLOUD_NAME="dymctedcp"
+CLOUDINARY_API_KEY="421383923439176"
 ```
 
 ## API-Endpoints
 
 ## user endpoints
-
-### get all users - `GET`
-    `https://mintyplex-api.onrender.com/api/v1/user/users/`
 
 ### add user profile - `POST`
 
@@ -67,6 +78,11 @@ request example-
     }
 ```
 
+### get all users - `GET`
+    `https://mintyplex-api.onrender.com/api/v1/user/users/`
+
+
+
 ### get a user profile - `GET`
 
     https://mintyplex-api.onrender.com/api/v1/user/profile/:id
@@ -75,20 +91,52 @@ this route takes the user's id as a parameter. e.g `https://mintyplex-api.onrend
 
 response example-
 
-    {
-        "error": false,
-        "message": "User Profile",
-        "user": {
-                "id": "660c3aafe22f82232121bbd9",
-                "wallet_address": "xion186n0xxs96rzvnrc8ld66zkywc54xvta0mc5ewx5yvx8tde4xvals8xxekr",
-                "email": "seanP@gmail.com",
-                "avatar": "/api/v1/user/avatar/",
-                "bio": "i love crypto",
-                "x_link": "x.com/seanP",
-                "created_at": 1712077487,
-                "updated_at": 1712077487
-        }
-    }
+```
+   {
+  "error": false,
+  "message": "User Profile",
+  "user": {
+    "wallet_address": "xion186n0xxs96rzvnrc8ld66zkywc54xvta0mc5ewx5yvx8tde4xvals8xxekr",
+    "bio": "came 2 fuck shit up n l(i)(ea)ve",
+    "x_link": "www.x.com/ephraimxblack",
+    "avatar": "https://mintyplex-api.onrender.com/api/v1/user/avatar/xion186n0xxs96rzvnrc8ld66zkywc54xvta0mc5ewx5yvx8tde4xvals8xxekr",
+    "products": [
+      {
+        "ID": "6641236c278f995dce8acf2c",
+        "UserId": "xion186n0xxs96rzvnrc8ld66zkywc54xvta0mc5ewx5yvx8tde4xvals8xxekr",
+        "CoverImage": "",
+        "Name": "rugged dreamer",
+        "Price": 619,
+        "Discount": 69,
+        "Description": "the lands are blue, blood is purple, buildings are leaves, mansions are dunghills",
+        "Categories": "art",
+        "Quantity": 666,
+        "Tags": [
+          "ancient",
+          "forever"
+        ],
+        "CreatedAt": 1715544940,
+        "UpdatedAt": 1715544940
+      },
+      {
+        "ID": "66412419278f995dce8acf2f",
+        "UserId": "xion186n0xxs96rzvnrc8ld66zkywc54xvta0mc5ewx5yvx8tde4xvals8xxekr",
+        "CoverImage": "",
+        "Name": "Alas Alan",
+        "Price": 700,
+        "Discount": 9,
+        "Description": "Lost brother is finally found and reconciled",
+        "Categories": "photography",
+        "Quantity": 50,
+        "Tags": [
+          "humans",
+          "affection"
+        ],
+        "CreatedAt": 1715545113,
+        "UpdatedAt": 1715545113
+      },
+}
+```
 
 ### edit a user profile - `PUT`
 
@@ -167,6 +215,11 @@ request example-
   "tags": ["crip", "lrip"]
 }
 ```
+
+### reserve username - `POST`
+    `https://mintyplex-api.onrender.com/api/v1/product/cover/66460cd9cfd1da94c95c5238`
+
+this route gets the cover of every product cover. `66460cd9cfd1da94c95c5238` is the `id` of the product.
 
 ### reserve username - `POST`
     https://mintyplex-api.onrender.com/api/v1/reserve/

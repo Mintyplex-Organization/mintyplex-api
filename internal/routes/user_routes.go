@@ -22,7 +22,7 @@ func UserRoutes(app *fiber.App) {
 	route.Get("/avatar/:id", controllers.GetAvatarById)
 	route.Delete("/avatar/:id", controllers.DeleteUserAvatar)
 	// route.Get("/avatar", controllers.GetUserAvatar)
-	
+
 	route.Delete("/avatar", middleware.Auth(), controllers.DeleteUserAvatar)
 
 }
