@@ -241,6 +241,9 @@ func OneProduct(c *fiber.Ctx) error {
 		})
 	}
 
+	baseURL := os.Getenv("BASE_URL")
+	product.CoverImage = fmt.Sprintf("%s%s", baseURL, product.CoverImage)
+
 	return c.Status(200).JSON(fiber.Map{
 		"status":  "success",
 		"message": "Product fetched successfully",
