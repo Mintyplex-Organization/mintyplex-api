@@ -22,11 +22,16 @@ import (
 )
 
 func AddProduct(c *fiber.Ctx) error {
+	// get user id from params
 	user := c.Params("id")
 
-	validate := validator.New()
+	// initiate db instance
 	db := c.Locals("db").(*mongo.Database)
 
+	// initiate validator for fields
+	validate := validator.New()
+
+	// parse request to model
 	addProd := &models.AddProduct{}
 	if err := c.BodyParser(addProd); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
@@ -35,6 +40,7 @@ func AddProduct(c *fiber.Ctx) error {
 		})
 	}
 
+	// validate request data
 	if err := validate.Struct(addProd); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error":   true,
@@ -50,8 +56,6 @@ func AddProduct(c *fiber.Ctx) error {
 		})
 	}
 	files := form.File["image"]
-
-	// var uploadedFiles []string
 
 	var imageURL string
 	productID := primitive.NewObjectID()
@@ -100,8 +104,6 @@ func AddProduct(c *fiber.Ctx) error {
 		imageURL = fmt.Sprintf("%s/api/v1/product/cover/%s", os.Getenv("BASE_URL"), productID.Hex())
 	}
 
-	fmt.Println(imageURL)
-
 	product := &models.Product{
 		ID:          productID,
 		UserId:      user,
@@ -113,12 +115,10 @@ func AddProduct(c *fiber.Ctx) error {
 		Quantity:    addProd.Quantity,
 		Tags:        addProd.Tags,
 		CoverImage:  imageURL,
-		CreatedAt:   time.Now().Unix(),
-		UpdatedAt:   time.Now().Unix(),
+		CreatedAt:   time.Now(),
+		UpdatedAt:   time.Now(),
 	}
 
-	fmt.Println(product.CoverImage)
-	fmt.Println(product.Quantity)
 	response, err := db.Collection(os.Getenv("PRODUCT_COLLECTION")).InsertOne(c.Context(), product)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
@@ -247,7 +247,20 @@ func OneProduct(c *fiber.Ctx) error {
 	return c.Status(200).JSON(fiber.Map{
 		"status":  "success",
 		"message": "Product fetched successfully",
-		"data":    product,
+		"data": fiber.Map{
+			"ID":          product.ID.Hex(),
+			"UserId":      product.UserId,
+			"CoverImage":  product.CoverImage,
+			"Name":        product.Name,
+			"Price":       product.Price,
+			"Discount":    product.Discount,
+			"Description": product.Description,
+			"Categories":  product.Categories,
+			"Quantity":    product.Quantity,
+			"Tags":        product.Tags,
+			"CreatedAt":   product.CreatedAt.Format(time.RFC3339),
+			"UpdatedAt":   product.UpdatedAt.Format(time.RFC3339),
+		},
 	})
 
 }

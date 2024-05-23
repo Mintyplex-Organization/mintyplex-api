@@ -9,11 +9,16 @@ import (
 	"mintyplex-api/internal/models"
 	"mintyplex-api/internal/utils"
 	"os"
+	"path/filepath"
 	"strings"
 	"time"
 
+	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
+	"github.com/google/uuid"
 	"go.mongodb.org/mongo-driver/bson"
+
+	// "go.mongodb.org/mongo-driver/internal/uuid"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/gridfs"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -48,9 +53,274 @@ func DoTier1(c *fiber.Ctx) error {
 		})
 	}
 
+		return c.Status(fiber.StatusCreated).JSON(fiber.Map{
+			"error":   false,
+			"message": "successfully upgraded to Tier 1",
+		})
+	}
+
+
+
+func DoTier91(c *fiber.Ctx) error {
+	db := c.Locals("db").(*mongo.Database)
+
+	validate := validator.New()
+
+	dotier1 := &models.DoTier1{}
+	if err := c.BodyParser(dotier1); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error":   true,
+			"message": "the from cannot be processed now " + err.Error(),
+		})
+	}
+
+	// validate request data
+	if err := validate.Struct(dotier1); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error":   true,
+			"message": "validation failed for this form" + err.Error(),
+		})
+	}
+
+	form, err := c.MultipartForm()
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error":   true,
+			"message": "Error parsing form data: " + err.Error(),
+		})
+	}
+	avatar := form.File["avatar"]
+
+	var avatarURL string
+	userID := dotier1.WalletAddress
+
+	for _, avatarHeader := range avatar {
+		file, err := avatarHeader.Open()
+		if err != nil {
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+				"error":   true,
+				"message": "Failed to open image file: " + err.Error(),
+			})
+		}
+		defer file.Close()
+
+		fileExtension := filepath.Ext(avatarHeader.Filename)
+		uniqueFileName := uuid.New().String() + fileExtension
+
+		bucket, err := gridfs.NewBucket(db, options.GridFSBucket().SetName(os.Getenv("AVATAR_BUCKET")))
+		if err != nil {
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+				"error":   true,
+				"message": "Failed to create GridFS bucket: " + err.Error(),
+			})
+		}
+
+		uploadStream, err := bucket.OpenUploadStream(uniqueFileName, options.GridFSUpload().SetMetadata(fiber.Map{
+			"avatar_id": userID,
+			"ext":       fileExtension,
+		}))
+		if err != nil {
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+				"error":   true,
+				"message": "Failed to open GridFS upload stream: " + err.Error(),
+			})
+		}
+		defer uploadStream.Close()
+
+		if _, err := io.Copy(uploadStream, file); err != nil {
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+				"error":   true,
+				"message": "Failed to copy file data to GridFS upload stream: " + err.Error(),
+			})
+		}
+
+		avatarURL = fmt.Sprintf("%s/api/v1/user/avatar/%s", os.Getenv("BASE_URL"), userID)
+	}
+
+	user := &models.User{
+		WalletAddress: dotier1.WalletAddress,
+		XLink:         dotier1.XLink,
+		Bio:           dotier1.Bio,
+		Avatar:        avatarURL,
+		CreatedAt:     time.Now(),
+		UpdatedAt:     time.Now(),
+	}
+
+	res, err := db.Collection(os.Getenv("USER_COLLECTION")).InsertOne(c.Context(), user)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error":   true,
+			"message": "Internal Server Error When Trying To Insert User Details" + err.Error(),
+		})
+	}
+
 	return c.Status(fiber.StatusCreated).JSON(fiber.Map{
 		"error":   false,
-		"message": "successfully upgraded to Tier 1",
+		"message": "Product Created successfully",
+		"user":    res.InsertedID,
+	})
+}
+
+func DooTier1(c *fiber.Ctx) error {
+	// Initiate DB instance
+	db := c.Locals("db").(*mongo.Database)
+
+	// Parse request to model
+	dotier1 := new(models.DoTier1)
+	if err := c.BodyParser(dotier1); err != nil {
+		fmt.Println("Error parsing body:", err)
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error":   true,
+			"message": "Invalid request data: " + err.Error(),
+		})
+	}
+
+	fmt.Println("Parsed request:", dotier1)
+
+	// Ensure WalletAddress is correctly parsed
+	if dotier1.WalletAddress == "" {
+		fmt.Println("Wallet address is missing in the request")
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error":   true,
+			"message": "Wallet address is required",
+		})
+	}
+
+	// Check if user already exists
+	var existingUser models.User
+	if err := db.Collection(os.Getenv("USER_COLLECTION")).FindOne(c.Context(), bson.M{"wallet_address": dotier1.WalletAddress}).Decode(&existingUser); err == nil {
+		fmt.Println("User already exists:", existingUser)
+		return c.Status(fiber.StatusConflict).JSON(fiber.Map{
+			"error":   true,
+			"message": "This wallet cannot have another account",
+		})
+	}
+
+	// Create new user ID
+	userID := dotier1.WalletAddress
+	fmt.Println("User ID is:", userID)
+
+	// Handle avatar upload
+	form, err := c.MultipartForm()
+	if err != nil {
+		fmt.Println("Error parsing multipart form:", err)
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error":   true,
+			"message": "Error parsing form data: " + err.Error(),
+		})
+	}
+
+	fmt.Println("Parsed multipart form:", form)
+
+	files := form.File["avatar"]
+	if len(files) == 0 {
+		fmt.Println("No avatar file provided")
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error":   true,
+			"message": "No avatar file provided",
+		})
+	}
+
+	var avatarURL string
+
+	for _, fileHeader := range files {
+		fmt.Println("Processing file:", fileHeader.Filename)
+
+		if fileHeader.Size > 5*1024*1024 { // Increase file size limit to 5MB
+			fmt.Println("File size too large:", fileHeader.Size)
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+				"error":   true,
+				"message": "File size too large, max 5MB allowed",
+			})
+		}
+
+		fileExtension := strings.ToLower(filepath.Ext(fileHeader.Filename))
+		if fileExtension != ".jpg" && fileExtension != ".jpeg" && fileExtension != ".png" {
+			fmt.Println("Invalid file type:", fileExtension)
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+				"error":   true,
+				"message": "Invalid file type",
+			})
+		}
+
+		file, err := fileHeader.Open()
+		if err != nil {
+			fmt.Println("Error opening file:", err)
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+				"error":   true,
+				"message": "Internal server error: " + err.Error(),
+			})
+		}
+		defer file.Close()
+
+		content, err := io.ReadAll(file)
+		if err != nil {
+			fmt.Println("Error reading file content:", err)
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+				"error":   true,
+				"message": "Internal server error: " + err.Error(),
+			})
+		}
+
+		bucket, err := gridfs.NewBucket(db, options.GridFSBucket().SetName(os.Getenv("AVATAR_BUCKET")))
+		if err != nil {
+			fmt.Println("Error creating GridFS bucket:", err)
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+				"error":   true,
+				"message": "Internal server error: " + err.Error(),
+			})
+		}
+
+		uploadStream, err := bucket.OpenUploadStream(userID, options.GridFSUpload().SetMetadata(bson.M{
+			"user_id": userID,
+			"ext":     fileExtension,
+		}))
+		if err != nil {
+			fmt.Println("Error opening upload stream:", err)
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+				"error":   true,
+				"message": "Internal server error: " + err.Error(),
+			})
+		}
+		defer uploadStream.Close()
+
+		if _, err := uploadStream.Write(content); err != nil {
+			fmt.Println("Error writing to upload stream:", err)
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+				"error":   true,
+				"message": "Internal server error: " + err.Error(),
+			})
+		}
+
+		avatarURL = fmt.Sprintf("%s/api/v1/user/avatar/%s", os.Getenv("BASE_URL"), userID)
+	}
+
+	fmt.Println("Avatar URL is:", avatarURL)
+
+	// Create new user
+	user := &models.User{
+		WalletAddress: userID,
+		XLink:         dotier1.XLink,
+		Bio:           dotier1.Bio,
+		Avatar:        avatarURL,
+		CreatedAt:     time.Now(),
+		UpdatedAt:     time.Now(),
+	}
+
+	fmt.Println("New user data:", user)
+
+	// Insert the new user into the database
+	if _, err := db.Collection(os.Getenv("USER_COLLECTION")).InsertOne(c.Context(), user); err != nil {
+		fmt.Println("Error inserting new user:", err)
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error":   true,
+			"message": "Failed to create user: " + err.Error(),
+		})
+	}
+
+	return c.Status(fiber.StatusCreated).JSON(fiber.Map{
+		"error":   false,
+		"message": "Successfully upgraded to Tier 1",
 	})
 }
 

@@ -30,6 +30,6 @@ type Product struct {
 	Categories  string             `bson:"categories"`
 	Quantity    int                `bson:"quantity"`
 	Tags        []string           `bson:"tags"`
-	CreatedAt   int64              `bson:"created_at"`
-	UpdatedAt   int64              `bson:"updated_at"`
+	CreatedAt   time.Time          `bson:"created_at"`
+	UpdatedAt   time.Time          `bson:"updated_at"`
 }
