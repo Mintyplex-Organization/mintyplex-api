@@ -48,6 +48,8 @@ func AddProduct(c *fiber.Ctx) error {
 		})
 	}
 
+	fmt.Printf("Parsed Request Data: %+v\n", addProd)
+
 	form, err := c.MultipartForm()
 	if err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
@@ -130,7 +132,7 @@ func AddProduct(c *fiber.Ctx) error {
 	return c.Status(fiber.StatusCreated).JSON(fiber.Map{
 		"error":   false,
 		"message": "Product Created successfully",
-		"task":    response.InsertedID,
+		"product":    response.InsertedID,
 	})
 }
 

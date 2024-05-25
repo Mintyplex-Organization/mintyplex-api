@@ -4,6 +4,13 @@ import (
 	"time"
 )
 
+type DoTier1 struct {
+	WalletAddress string `json:"wallet_address" bson:"_id" validate:"required"`
+	XLink         string `json:"x_link" validate:"required"`
+	Bio           string `json:"bio" validate:"required"`
+	// Avatar        string `json:"avatar" bson:"avatar"`
+}
+
 type User struct {
 	WalletAddress string    `bson:"_id"`
 	XLink         string    `bson:"x_link,omitempty"`
