@@ -453,7 +453,7 @@ func UUpdateUserAvatar(c *fiber.Ctx) error {
 	})
 }
 
-func UUpdateUserAvatar(c *fiber.Ctx) error {
+func UUUpdateUserAvatar(c *fiber.Ctx) error {
 	user := c.Params("id")
 
 	db := c.Locals("db").(*mongo.Database)
