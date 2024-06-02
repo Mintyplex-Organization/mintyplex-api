@@ -262,6 +262,8 @@ func UserProfile(c *fiber.Ctx) error {
 		fileID := avatar["_id"].(primitive.ObjectID).Hex()
 		baseURL := os.Getenv("BASE_URL")
 		avatarURL = fmt.Sprintf("%s/api/v1/user/avatar/%s", baseURL, fileID)
+
+		fmt.Println("user avatar ", avatarURL)
 	}
 
 	// Fetch user's products
@@ -451,7 +453,7 @@ func UUpdateUserAvatar(c *fiber.Ctx) error {
 	})
 }
 
-func UpdateUserAvatar(c *fiber.Ctx) error {
+func UUpdateUserAvatar(c *fiber.Ctx) error {
 	user := c.Params("id")
 
 	db := c.Locals("db").(*mongo.Database)

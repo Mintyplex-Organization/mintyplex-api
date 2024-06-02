@@ -17,7 +17,7 @@ func UserRoutes(app *fiber.App) {
 	route.Get("/users", controllers.GetUsers)
 
 	// <--- avatar routes --->
-	route.Put("/avatar/:id", controllers.UpdateUserAvatar)
+	// route.Put("/avatar/:id", controllers.UpdateUserAvatar)
 	route.Get("/avatar/:id", controllers.GetAvatarById)
 	route.Delete("/avatar/:id", controllers.DeleteUserAvatar)
 	// route.Get("/avatar", controllers.GetUserAvatar)
