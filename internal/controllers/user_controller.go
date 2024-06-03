@@ -14,7 +14,6 @@ import (
 
 	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
-	"github.com/google/uuid"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 
@@ -55,53 +54,59 @@ func DoTier1(c *fiber.Ctx) error {
 	}
 
 	files := form.File["avatar"]
-	var avatarURL string
 	userID := doTier.WalletAddress
-	fmt.Println("userID is - ", userID)
+	var avatarURL string
 
-	for _, fileHead := range files {
-		file, err := fileHead.Open()
-		if err != nil {
-			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-				"error":   true,
-				"message": "Failed to open image file: " + err.Error(),
-			})
+	if len(files) > 0 {
+		for _, fileHead := range files {
+			file, err := fileHead.Open()
+			if err != nil {
+				return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+					"error":   true,
+					"message": "Failed to open image file: " + err.Error(),
+				})
+			}
+			defer file.Close()
+
+			fileExtension := filepath.Ext(fileHead.Filename)
+
+			fmt.Println("avatar bucket is ", os.Getenv("AVATAR_BUCKET"))
+			bucket, err := gridfs.NewBucket(db, options.GridFSBucket().SetName(os.Getenv("AVATAR_BUCKET")))
+			if err != nil {
+				return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+					"error":   true,
+					"message": "Failed to create GridFS bucket: " + err.Error(),
+				})
+			}
+
+			// Use userID as the _id for the avatar
+			uploadStream, err := bucket.OpenUploadStreamWithID(userID, userID, options.GridFSUpload().SetMetadata(fiber.Map{
+				"user_id": userID,
+				"ext":     fileExtension,
+			}))
+			if err != nil {
+				return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+					"error":   true,
+					"message": "Failed to open GridFS upload stream: " + err.Error(),
+				})
+			}
+			defer uploadStream.Close()
+
+			if _, err := io.Copy(uploadStream, file); err != nil {
+				return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+					"error":   true,
+					"message": "Failed to copy file data to GridFS upload stream: " + err.Error(),
+				})
+			}
+
+			avatarURL = fmt.Sprintf("%s/api/v1/user/avatar/%s", os.Getenv("BASE_URL"), userID)
+			fmt.Println(avatarURL)
 		}
-		defer file.Close()
+	}
 
-		fileExtension := filepath.Ext(fileHead.Filename)
-		uniqueName := uuid.New().String() + fileExtension
-
-		fmt.Println("avatar bucket is ", os.Getenv("AVATAR_BUCKET"))
-		bucket, err := gridfs.NewBucket(db, options.GridFSBucket().SetName(os.Getenv("AVATAR_BUCKET")))
-		if err != nil {
-			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-				"error":   true,
-				"message": "Failed to create GridFS bucket: " + err.Error(),
-			})
-		}
-
-		uploadStream, err := bucket.OpenUploadStream(uniqueName, options.GridFSUpload().SetMetadata(fiber.Map{
-			"user_id": userID,
-			"ext":     fileExtension,
-		}))
-		if err != nil {
-			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-				"error":   true,
-				"message": "Failed to open GridFS upload stream: " + err.Error(),
-			})
-		}
-		defer uploadStream.Close()
-
-		if _, err := io.Copy(uploadStream, file); err != nil {
-			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-				"error":   true,
-				"message": "Failed to copy file data to GridFS upload stream: " + err.Error(),
-			})
-		}
-
-		avatarURL = fmt.Sprintf("%s/api/v1/user/avatar/%s", os.Getenv("BASE_URL"), userID)
-		fmt.Println(avatarURL)
+	// If no file is uploaded, use a default avatar URL
+	if avatarURL == "" {
+		avatarURL = fmt.Sprintf("%s/api/v1/user/avatar/default.png", os.Getenv("BASE_URL"))
 	}
 
 	fmt.Println("doTier.XLink - ", doTier.XLink)
@@ -129,7 +134,7 @@ func DoTier1(c *fiber.Ctx) error {
 	})
 }
 
-func UUserProfile(c *fiber.Ctx) error {
+func UserProfile(c *fiber.Ctx) error {
 	walletAddress := c.Params("id")
 
 	db := c.Locals("db").(*mongo.Database)
@@ -218,15 +223,14 @@ func UUserProfile(c *fiber.Ctx) error {
 	})
 }
 
-func UserProfile(c *fiber.Ctx) error {
+func UUserProfile(c *fiber.Ctx) error {
 	walletAddress := c.Params("id")
 
 	db := c.Locals("db").(*mongo.Database)
 
 	result := db.Collection(os.Getenv("USER_COLLECTION")).FindOne(c.Context(), fiber.Map{"_id": walletAddress})
-	var err error
 	if result.Err() != nil {
-		if err == mongo.ErrNoDocuments {
+		if result.Err() == mongo.ErrNoDocuments {
 			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
 				"error":   true,
 				"message": "User not found, give it a second",
@@ -241,14 +245,17 @@ func UserProfile(c *fiber.Ctx) error {
 
 	var foundUser models.User
 	if err := result.Decode(&foundUser); err != nil {
-		return err
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error":   true,
+			"message": "Error decoding user data",
+		})
 	}
 
 	var avatarURL string
 
 	// Fetch user's avatar
 	var avatar bson.M
-	err = db.Collection("fs.files").FindOne(c.Context(), bson.M{"metadata.user_id": walletAddress}).Decode(&avatar)
+	err := db.Collection("fs.files").FindOne(c.Context(), bson.M{"metadata.user_id": walletAddress}).Decode(&avatar)
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
 			avatarURL = "https://as1.ftcdn.net/v2/jpg/03/46/83/96/1000_F_346839683_6nAPzbhpSkIpb8pmAwufkC7c5eD7wYws.jpg" // or some default avatar URL
@@ -262,8 +269,6 @@ func UserProfile(c *fiber.Ctx) error {
 		fileID := avatar["_id"].(primitive.ObjectID).Hex()
 		baseURL := os.Getenv("BASE_URL")
 		avatarURL = fmt.Sprintf("%s/api/v1/user/avatar/%s", baseURL, fileID)
-
-		fmt.Println("user avatar ", avatarURL)
 	}
 
 	// Fetch user's products
@@ -272,27 +277,11 @@ func UserProfile(c *fiber.Ctx) error {
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error":   true,
-			"message": "error fetching this user's products",
+			"message": "Error fetching this user's products",
 			"details": err.Error(),
 		})
 	}
 	defer cursor.Close(c.Context())
-
-	if !cursor.Next(c.Context()) {
-		return c.Status(200).JSON(fiber.Map{
-			"error":   false,
-			"message": "User Profile",
-			"user": models.UserProfileResponse{
-				WalletAddress: foundUser.WalletAddress,
-				XLink:         foundUser.XLink,
-				Bio:           foundUser.Bio,
-				Avatar:        avatarURL,
-				Products:      []models.Product{},
-				CreatedAt:     foundUser.CreatedAt,
-				UpdatedAt:     foundUser.UpdatedAt,
-			},
-		})
-	}
 
 	if err := cursor.All(c.Context(), &userProducts); err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
