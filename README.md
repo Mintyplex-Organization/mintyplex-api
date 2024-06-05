@@ -184,6 +184,39 @@ this route all gets all existing products in the database
 ### get one product - `GET`
         `https://mintyplex-api.onrender.com/api/v1/product/:id`
 this route gets one existing product in the database
+response example-
+```
+{
+    "data": {
+        "Product": {
+            "Categories": "ebook",
+            "CoverImage": "https://mintyplex-api.onrender.com/api/v1/product/cover/6660c0333db0b307f1855dd8",
+            "CreatedAt": "2024-06-05T19:44:51Z",
+            "Description": "Here is a fitness product",
+            "Discount": 2,
+            "ID": "6660c0333db0b307f1855dd8",
+            "Name": "Fitness product",
+            "Price": 230,
+            "Quantity": 2,
+            "Tags": [
+                "Fitness,Gym"
+            ],
+            "UpdatedAt": "2024-06-05T19:44:51Z",
+            "UserId": "xion1pplhg304ud4wje3j5gvvvy2enssat3har4dx9wvdjv06jz0rmhcqvdwa27"
+        },
+        "User": {
+            "Avatar": "https://res.cloudinary.com/dymctedcp/image/upload/v1717616378/fmriuiywijvther6thzm.jpg",
+            "Bio": "Ahava store is your favorite store to shop both men and women jewelries. - updating profile",
+            "CreatedAt": "0001-01-01T00:00:00Z",
+            "UpdatedAt": "0001-01-01T00:00:00Z",
+            "WalletAddress": "xion1pplhg304ud4wje3j5gvvvy2enssat3har4dx9wvdjv06jz0rmhcqvdwa27",
+            "XLink": "https://ahava.com"
+        }
+    },
+    "message": "Product and user details fetched successfully",
+    "status": "success"
+}
+```
 
 
 ### update product - `PUT`
