@@ -54,6 +54,7 @@ COVER_COLLECTION="covers.files"
 
 JWT_SECRET_KEY="ThisIsMySecretKey"
 
+CLOUDINARY_URL=cloudinary://421383923439176:HlqD4kGIszGt3wfqVe4RzSDjJkI@dymctedcp
 CLOUDINARY_API_SECRET="HlqD4kGIszGt3wfqVe4RzSDjJkI"
 CLOUDINARY_CLOUD_NAME="dymctedcp"
 CLOUDINARY_API_KEY="421383923439176"
@@ -99,7 +100,7 @@ response example-
     "wallet_address": "xion186n0xxs96rzvnrc8ld66zkywc54xvta0mc5ewx5yvx8tde4xvals8xxekr",
     "bio": "came 2 fuck shit up n l(i)(ea)ve",
     "x_link": "www.x.com/ephraimxblack",
-    "avatar": "https://mintyplex-api.onrender.com/api/v1/user/avatar/xion186n0xxs96rzvnrc8ld66zkywc54xvta0mc5ewx5yvx8tde4xvals8xxekr",
+    "avatar": "https://res.cloudinary.com/dymctedcp/image/upload/v1717613524/tgpmqpef4u0jivgzy6d3.jpg",
     "products": [
       {
         "ID": "6641236c278f995dce8acf2c",
@@ -152,19 +153,6 @@ request example-
     }
 ```
 
-### upload user avatar - `POST`
-
-    `https://mintyplex-api.onrender.com/api/v1/user/avatar/:id`
-
-users upload their avatars. with any api client of your choice that supports file uploading and under `form` select files(this setup works for thunder client in vs code at the time), form name is `avatar`, go ahead to select image and send request.
-
-### update user avatar - `PUT`
-    `https://mintyplex-api.onrender.com/api/v1/user/avatar/:id`
-
-
-### retrieve user avatar - `GET`
-    `https://mintyplex-api.onrender.com/api/v1/user/avatar/:id`
-retrieve users' avatars
 
 ## product endpoints
 

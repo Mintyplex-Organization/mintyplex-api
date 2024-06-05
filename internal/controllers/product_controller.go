@@ -1,50 +1,45 @@
 package controllers
 
 import (
-	"bytes"
 	"context"
 	"fmt"
-	"io"
 	"mintyplex-api/internal/models"
-	"mintyplex-api/internal/utils"
 	"os"
-	"path/filepath"
 	"time"
 
+	"github.com/cloudinary/cloudinary-go/v2"
+	"github.com/cloudinary/cloudinary-go/v2/api/uploader"
 	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
-	"github.com/google/uuid"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/gridfs"
-	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 func AddProduct(c *fiber.Ctx) error {
-	// get user id from params
+	// Get user ID from params
 	user := c.Params("id")
 
-	// initiate db instance
+	// Initiate db instance
 	db := c.Locals("db").(*mongo.Database)
 
-	// initiate validator for fields
+	// Initiate validator for fields
 	validate := validator.New()
 
-	// parse request to model
+	// Parse request to model
 	addProd := &models.AddProduct{}
 	if err := c.BodyParser(addProd); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error":   true,
-			"message": "invalid request data " + err.Error(),
+			"message": "Invalid request data " + err.Error(),
 		})
 	}
 
-	// validate request data
+	// Validate request data
 	if err := validate.Struct(addProd); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error":   true,
-			"message": "validation error: " + err.Error(),
+			"message": "Validation error: " + err.Error(),
 		})
 	}
 
@@ -62,8 +57,10 @@ func AddProduct(c *fiber.Ctx) error {
 	var imageURL string
 	productID := primitive.NewObjectID()
 
-	for _, fileHeadr := range files {
-		file, err := fileHeadr.Open()
+	// Upload image to Cloudinary
+	if len(files) > 0 {
+		fileHead := files[0]
+		file, err := fileHead.Open()
 		if err != nil {
 			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 				"error":   true,
@@ -72,38 +69,25 @@ func AddProduct(c *fiber.Ctx) error {
 		}
 		defer file.Close()
 
-		fileExtension := filepath.Ext(fileHeadr.Filename)
-		uniqueFilename := uuid.New().String() + fileExtension
-		// uploadedFiles = append(uploadedFiles, uniqueFilename)
-
-		bucket, err := gridfs.NewBucket(db, options.GridFSBucket().SetName(os.Getenv("COVER_BUCKET")))
+		urlCloudinary := os.Getenv("CLOUDINARY_URL")
+		ctx := context.Background()
+		cldService, err := cloudinary.NewFromURL(urlCloudinary)
 		if err != nil {
 			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 				"error":   true,
-				"message": "Failed to create GridFS bucket: " + err.Error(),
+				"message": "Failed to initialize Cloudinary service: " + err.Error(),
 			})
 		}
 
-		uploadStream, err := bucket.OpenUploadStream(uniqueFilename, options.GridFSUpload().SetMetadata(fiber.Map{
-			"product_id": productID,
-			"ext":        fileExtension,
-		}))
+		resp, err := cldService.Upload.Upload(ctx, file, uploader.UploadParams{})
 		if err != nil {
 			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 				"error":   true,
-				"message": "Failed to open GridFS upload stream: " + err.Error(),
-			})
-		}
-		defer uploadStream.Close()
-
-		if _, err := io.Copy(uploadStream, file); err != nil {
-			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-				"error":   true,
-				"message": "Failed to copy file data to GridFS upload stream: " + err.Error(),
+				"message": "Failed to upload image to Cloudinary: " + err.Error(),
 			})
 		}
 
-		imageURL = fmt.Sprintf("%s/api/v1/product/cover/%s", os.Getenv("BASE_URL"), productID.Hex())
+		imageURL = resp.SecureURL
 	}
 
 	product := &models.Product{
@@ -132,58 +116,8 @@ func AddProduct(c *fiber.Ctx) error {
 	return c.Status(fiber.StatusCreated).JSON(fiber.Map{
 		"error":   false,
 		"message": "Product Created successfully",
-		"product":    response.InsertedID,
+		"product": response.InsertedID,
 	})
-}
-
-func GetProductCover(c *fiber.Ctx) error {
-	productID := c.Params("id")
-	fmt.Println("Product ID:", productID)
-
-	var coverMetadata bson.M
-
-	db := c.Locals("db").(*mongo.Database)
-
-	// Convert the product ID string to an ObjectId
-	objectID, err := primitive.ObjectIDFromHex(productID)
-	if err != nil {
-		fmt.Println("Invalid product ID:", err)
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error":   true,
-			"message": "Invalid product ID",
-			"data":    err.Error(),
-		})
-	}
-
-	// Query the document using the product ID
-	if err := db.Collection(os.Getenv("COVER_COLLECTION")).FindOne(c.Context(), bson.M{"metadata.product_id": objectID}).Decode(&coverMetadata); err != nil {
-		fmt.Println("Error fetching cover metadata:", err)
-		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
-			"error":   true,
-			"message": "Cover metadata retrieval error",
-			"data":    err.Error(),
-		})
-	}
-
-	fmt.Println("Cover Metadata:", coverMetadata)
-
-	var buffer bytes.Buffer
-	bucket, _ := gridfs.NewBucket(db, options.GridFSBucket().SetName(os.Getenv("COVER_BUCKET")))
-	_, err = bucket.DownloadToStreamByName(coverMetadata["filename"].(string), &buffer)
-	if err != nil {
-		fmt.Println("Error downloading image:", err)
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error":   true,
-			"message": "Error downloading image",
-			"data":    err.Error(),
-		})
-	}
-
-	// Set response headers
-	utils.SetAvatarHeaders(c, buffer, coverMetadata["metadata"].(bson.M)["ext"].(string))
-
-	// Return the image data as the response body
-	return c.Send(buffer.Bytes())
 }
 
 func AllProducts(c *fiber.Ctx) error {
@@ -243,28 +177,45 @@ func OneProduct(c *fiber.Ctx) error {
 		})
 	}
 
-	baseURL := os.Getenv("BASE_URL")
-	product.CoverImage = fmt.Sprintf("%s%s", baseURL, product.CoverImage)
+	fmt.Println(product.UserId)
+	// Fetch user details using the UserId from the product
+	var user models.User
+	if err := db.Collection(os.Getenv("USER_COLLECTION")).FindOne(ctx, bson.M{"_id": product.UserId}).Decode(&user); err != nil {
+		return c.Status(400).JSON(fiber.Map{
+			"status":  "error",
+			"message": "User Not Found",
+			"data":    err.Error(),
+		})
+	}
 
 	return c.Status(200).JSON(fiber.Map{
 		"status":  "success",
-		"message": "Product fetched successfully",
+		"message": "Product and user details fetched successfully",
 		"data": fiber.Map{
-			"ID":          product.ID.Hex(),
-			"UserId":      product.UserId,
-			"CoverImage":  product.CoverImage,
-			"Name":        product.Name,
-			"Price":       product.Price,
-			"Discount":    product.Discount,
-			"Description": product.Description,
-			"Categories":  product.Categories,
-			"Quantity":    product.Quantity,
-			"Tags":        product.Tags,
-			"CreatedAt":   product.CreatedAt.Format(time.RFC3339),
-			"UpdatedAt":   product.UpdatedAt.Format(time.RFC3339),
+			"Product": fiber.Map{
+				"ID":          product.ID.Hex(),
+				"UserId":      product.UserId,
+				"CoverImage":  product.CoverImage,
+				"Name":        product.Name,
+				"Price":       product.Price,
+				"Discount":    product.Discount,
+				"Description": product.Description,
+				"Categories":  product.Categories,
+				"Quantity":    product.Quantity,
+				"Tags":        product.Tags,
+				"CreatedAt":   product.CreatedAt.Format(time.RFC3339),
+				"UpdatedAt":   product.UpdatedAt.Format(time.RFC3339),
+			},
+			"User": fiber.Map{
+				"WalletAddress": user.WalletAddress,
+				"Avatar":        user.Avatar,
+				"Bio":           user.Bio,
+				"XLink":         user.XLink,
+				"CreatedAt":     user.CreatedAt.Format(time.RFC3339),
+				"UpdatedAt":     user.UpdatedAt.Format(time.RFC3339),
+			},
 		},
 	})
-
 }
 
 func UpdateProduct(c *fiber.Ctx) error {
