@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"mintyplex-api/internal/models"
+	"mintyplex-api/internal/utils"
 	"os"
 	"time"
 
@@ -52,12 +53,10 @@ func AddProduct(c *fiber.Ctx) error {
 			"message": "Error parsing form data: " + err.Error(),
 		})
 	}
-	files := form.File["image"]
-
-	var imageURL string
-	productID := primitive.NewObjectID()
 
 	// Upload image to Cloudinary
+	files := form.File["image"]
+	var imageURL string
 	if len(files) > 0 {
 		fileHead := files[0]
 		file, err := fileHead.Open()
@@ -90,6 +89,50 @@ func AddProduct(c *fiber.Ctx) error {
 		imageURL = resp.SecureURL
 	}
 
+	// Upload other files to Sia
+	fileSia := form.File["file"]
+	var siaURL string
+	if len(fileSia) > 0 {
+		for _, fileHead := range fileSia {
+			file, err := fileHead.Open()
+			if err != nil {
+				return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+					"error":   true,
+					"message": "Failed to open file: " + err.Error(),
+				})
+			}
+			defer file.Close()
+
+			// Determine the file type based on the file extension
+			fileType := utils.DetermineFileType(fileHead.Filename)
+
+			var bucket string
+			// bucket = fmt.Sprintf("%s-bucket", fileType)
+
+			// Set product and bucket manually for now
+
+			switch fileType {
+			case "audio":
+				bucket = "audio-bucket"
+			case "ebook":
+				bucket = "ebook-bucket"
+			case "image":
+				bucket = "image-bucket"
+			default:
+				bucket = "default-bucket"
+			}
+
+			siaURL, err = utils.UploadToSia(file, user, bucket, fileHead.Filename)
+			if err != nil {
+				return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+					"error":   true,
+					"message": "Failed to upload file to Sia renterd: " + err.Error(),
+				})
+			}
+		}
+	}
+
+	productID := primitive.NewObjectID()
 	product := &models.Product{
 		ID:          productID,
 		UserId:      user,
@@ -101,6 +144,7 @@ func AddProduct(c *fiber.Ctx) error {
 		Quantity:    addProd.Quantity,
 		Tags:        addProd.Tags,
 		CoverImage:  imageURL,
+		SiaURL:      siaURL,
 		CreatedAt:   time.Now(),
 		UpdatedAt:   time.Now(),
 	}
@@ -279,45 +323,5 @@ func UpdateProduct(c *fiber.Ctx) error {
 		"status":  "success",
 		"message": "Product updated successfully",
 		"data":    existingProduct,
-	})
-}
-
-func UUpdateProduct(c *fiber.Ctx) error {
-	var updateData bson.M
-	if err := c.BodyParser(&updateData); err != nil {
-		return c.Status(400).JSON(fiber.Map{
-			"status":  "error",
-			"message": "request is invalid",
-			"data":    err,
-		})
-	}
-
-	id := c.Params("id")
-
-	productId, err := primitive.ObjectIDFromHex(id)
-	if err != nil {
-		return c.Status(400).JSON(fiber.Map{
-			"status":  "error",
-			"message": "link is broken, try again",
-			"data":    err,
-		})
-	}
-
-	filter := bson.M{"_id": productId}
-
-	db := c.Locals("db").(*mongo.Database)
-	product, err := db.Collection(os.Getenv("PRODUCT_COLLECTION")).FindOneAndUpdate(c.Context(), filter, bson.M{"$set": updateData}).DecodeBytes()
-	if err != nil {
-		return c.Status(400).JSON(fiber.Map{
-			"status":  "error",
-			"message": "Error updating product",
-			"data":    err,
-		})
-	}
-
-	return c.Status(200).JSON(fiber.Map{
-		"status":  "success",
-		"message": "Product updated successfully",
-		"data":    product.String(),
 	})
 }

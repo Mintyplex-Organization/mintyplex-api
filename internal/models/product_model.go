@@ -15,6 +15,7 @@ type AddProduct struct {
 	Categories  string    `bson:"categories"`
 	Quantity    int       `bson:"quantity"`
 	Tags        []string  `bson:"tags"`
+	SiaURL      string    `bson:"sia_url"`
 	CreatedAt   time.Time `bson:"created_at"`
 	UpdatedAt   time.Time `bson:"updated_at"`
 }
@@ -30,6 +31,7 @@ type Product struct {
 	Categories  string             `bson:"categories"`
 	Quantity    int                `bson:"quantity"`
 	Tags        []string           `bson:"tags"`
+	SiaURL      string             `bson:"sia_url"`
 	CreatedAt   time.Time          `bson:"created_at"`
 	UpdatedAt   time.Time          `bson:"updated_at"`
 }

@@ -9,7 +9,9 @@ import (
 )
 
 func main() {
-	app := fiber.New()
+	app := fiber.New(fiber.Config{
+		BodyLimit: 200 * 1024 * 1024, // this is the default limit of 4MB
+	})
 
 	middleware.CorsMiddleware(app)
 

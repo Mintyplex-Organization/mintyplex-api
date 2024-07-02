@@ -15,5 +15,7 @@ func ProductRoutes(app *fiber.App) {
 	route.Put("/:id/:uid", controllers.UpdateProduct)
 	// route.Delete("/:id", controllers.DeleteProduct)
 
+	// route.Put("/file_upload", controllers.UploadToSiaHandler)
+
 
 }

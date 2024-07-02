@@ -14,7 +14,6 @@ import (
 	"github.com/cloudinary/cloudinary-go/v2"
 	"github.com/cloudinary/cloudinary-go/v2/api/uploader"
 	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/gridfs"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
@@ -140,13 +139,6 @@ func UserProfile(c *fiber.Ctx) error {
 	if err := result.Decode(&foundUser); err != nil {
 		return err
 	}
-
-	// var avatarURL string
-
-	// avatarID := foundUser.WalletAddress
-	// if avatarID != "" {
-	// 	avatarURL = "https://mintyplex-api.onrender.com/api/v1/user/avatar/" + avatarID
-	// }
 
 	var userProducts []models.Product
 	cursor, err := db.Collection(os.Getenv("PRODUCT_COLLECTION")).Find(c.Context(), bson.M{"user_id": walletAddress})
@@ -354,33 +346,5 @@ func UpdateUserProfile(c *fiber.Ctx) error {
 		"status":  "success",
 		"message": "Your profile's been updated!",
 		"data":    updatedProfile,
-	})
-}
-
-func DeleteUserAvatar(c *fiber.Ctx) error {
-	userID := c.Params("id")
-	db := c.Locals("db").(*mongo.Database)
-
-	var avatarMetadata bson.M
-
-	if err := db.Collection(os.Getenv("AVATAR_COLLECTION")).FindOne(c.Context(), fiber.Map{"metadata.user_id": userID}).Decode(&avatarMetadata); err != nil {
-		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
-			"error":   true,
-			"message": "Avatar not found",
-		})
-	}
-
-	bucket, _ := gridfs.NewBucket(db, options.GridFSBucket().SetName(os.Getenv("AVATAR_BUCKET")))
-
-	if err := bucket.Delete(userID); err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error":   true,
-			"message": "Internal server error",
-		})
-	}
-
-	return c.Status(fiber.StatusOK).JSON(fiber.Map{
-		"error":   false,
-		"message": "Avatar deleted successfully",
 	})
 }

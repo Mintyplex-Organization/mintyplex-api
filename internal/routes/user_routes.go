@@ -2,7 +2,6 @@ package routes
 
 import (
 	"mintyplex-api/internal/controllers"
-	"mintyplex-api/internal/middleware"
 
 	"github.com/gofiber/fiber/v2"
 )
@@ -19,9 +18,5 @@ func UserRoutes(app *fiber.App) {
 	// <--- avatar routes --->
 	// route.Put("/avatar/:id", controllers.UpdateUserAvatar)
 	// route.Get("/avatar/:id", controllers.GetAvatarById)
-	route.Delete("/avatar/:id", controllers.DeleteUserAvatar)
-	// route.Get("/avatar", controllers.GetUserAvatar)
-
-	route.Delete("/avatar", middleware.Auth(), controllers.DeleteUserAvatar)
 
 }
