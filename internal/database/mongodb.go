@@ -2,6 +2,7 @@ package database
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"os"
 	"time"
@@ -14,6 +15,7 @@ import (
 func MongoClient() *mongo.Database {
 	err := godotenv.Load()
 	if err != nil {
+		fmt.Println(err)
 		panic("Error Loading .env File, Check If It Exists.")
 	}
 	log.Println("Connecting to MongoDB...")

@@ -25,17 +25,61 @@ func DetermineFileType(filename string) string {
 	}
 }
 
-func UploadToSia(file multipart.File, userID, bucket, filename string) (string, error) {
-	siaServer := os.Getenv("SIA_SERVER")
-	url := fmt.Sprintf("http://%s/api/worker/objects/users/%s/%s/%s", siaServer, userID, bucket, filename)
-	fmt.Println(url)
+// func UploadToSia(file multipart.File, userID, bucket, filename string) (string, error) {
+// 	siaServer := os.Getenv("SIA_SERVER")
+// 	url := fmt.Sprintf("http://%s/api/worker/objects/users/%s/%s/%s", siaServer, userID, bucket, filename)
+// 	fmt.Println(url)
 
-	req, err := http.NewRequest("PUT", url, file)
+// 	req, err := http.NewRequest("PUT", url, file)
+// 	if err != nil {
+// 		return "", err
+// 	}
+// 	req.Header.Set("Authorization", "Basic "+os.Getenv("SIA_API_AUTH"))
+// 	req.Header.Set("Content-Type", "application/octet-stream")
+
+// 	// Use a custom HTTP client to ignore SSL verification (not recommended for production)
+// 	client := &http.Client{
+// 		Transport: &http.Transport{
+// 			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+// 		},
+// 	}
+
+// 	res, err := client.Do(req)
+// 	if err != nil {
+// 		return "", err
+// 	}
+// 	defer res.Body.Close()
+
+// 	if res.StatusCode != http.StatusOK {
+// 		body, _ := io.ReadAll(res.Body)
+// 		return "", fmt.Errorf("failed to upload to Sia renterd: %s", body)
+// 	}
+
+// 	return url, nil
+// }
+
+func UploadToSia(file multipart.File, userID, bucket, filename string) (string, error) {
+	uploadURL := "https://upload.mintyplex.com/s5/upload"
+	// uploadURL := "localhost:9980/s5/upload"
+	authToken := os.Getenv("SIA_API_AUTH")
+	fmt.Println(authToken)
+
+	if authToken == "" {
+		return "", fmt.Errorf("SIA_AUTH_TOKEN environment variable is not set")
+	}
+
+	// Create the request
+	// url := fmt.Sprintf("%s?auth_token=%s", uploadURL, authToken)
+	// fmt.Println("Request URL:", url)
+
+	req, err := http.NewRequest("POST", uploadURL, file)
 	if err != nil {
 		return "", err
 	}
 
-	req.Header.Set("Authorization", "Basic "+os.Getenv("SIA_API_AUTH"))
+	// Optionally, you can set the Authorization header instead of using the query parameter
+	req.Header.Set("Authorization", "Bearer "+os.Getenv("SIA_API_AUTH"))
+
 	req.Header.Set("Content-Type", "application/octet-stream")
 
 	// Use a custom HTTP client to ignore SSL verification (not recommended for production)
@@ -53,10 +97,10 @@ func UploadToSia(file multipart.File, userID, bucket, filename string) (string, 
 
 	if res.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(res.Body)
-		return "", fmt.Errorf("failed to upload to Sia renterd: %s", body)
+		return "", fmt.Errorf("failed to upload to Sia: %s", body)
 	}
 
-	return url, nil
+	return uploadURL, nil
 }
 
 func UploadToSiaHandler(c *fiber.Ctx) error {
