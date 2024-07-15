@@ -38,7 +38,7 @@ func UploadToSia(file multipart.File, userID, bucket, filename string) (string, 
 	url := fmt.Sprintf("%s?userID=%s&bucket=%s&filename=%s", uploadURL, userID, bucket, filename)
 	fmt.Println("Request URL:", url)
 
-	req, err := http.NewRequest("POST", url, file)
+	req, err := http.NewRequest("POST", uploadURL, file)
 	if err != nil {
 		return "", err
 	}
