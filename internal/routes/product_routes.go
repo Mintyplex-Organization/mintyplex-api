@@ -13,6 +13,7 @@ func ProductRoutes(app *fiber.App) {
 	route.Get("/", controllers.AllProducts)
 	route.Get("/:id", controllers.OneProduct)
 	route.Put("/:id/:uid", controllers.UpdateProduct)
+	route.Get("/download", controllers.Download)
 	// route.Delete("/:id", controllers.DeleteProduct)
 
 	// route.Put("/file_upload", controllers.UploadToSiaHandler)

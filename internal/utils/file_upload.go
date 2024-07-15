@@ -22,68 +22,29 @@ func DetermineFileType(filename string) string {
 		return "unknown"
 	}
 }
-func CreateBucket(bucketName string) error {
-	siaServer := os.Getenv("SIA_SERVER")
-	authToken := os.Getenv("SIA_API_AUTH")
-	if authToken == "" {
-		return fmt.Errorf("SIA_API_AUTH environment variable is not set")
-	}
-
-	url := fmt.Sprintf("http://%s/api/worker/buckets/%s", siaServer, bucketName)
-	fmt.Println("Creating bucket at URL:", url)
-
-	req, err := http.NewRequest("POST", url, nil)
-	if err != nil {
-		return err
-	}
-
-	req.Header.Set("Authorization", "Bearer "+authToken)
-
-	client := &http.Client{
-		Transport: &http.Transport{
-			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
-		},
-	}
-
-	res, err := client.Do(req)
-	if err != nil {
-		return err
-	}
-	defer res.Body.Close()
-
-	if res.StatusCode != http.StatusOK {
-		body, _ := io.ReadAll(res.Body)
-		return fmt.Errorf("failed to create bucket: %s", body)
-	}
-
-	fmt.Println("Bucket created successfully")
-	return nil
-}
 
 func UploadToSia(file multipart.File, userID, bucket, filename string) (string, error) {
 	uploadURL := "https://upload.mintyplex.com/s5/upload"
-	// uploadURL := "localhost:9980/s5/upload"
 	authToken := os.Getenv("SIA_API_AUTH")
 	fmt.Println(authToken)
 
 	if authToken == "" {
-		return "", fmt.Errorf("SIA_AUTH_TOKEN environment variable is not set")
+		return "", fmt.Errorf("SIA_API_AUTH environment variable is not set")
 	}
 
 	// Create the request
-	// url := fmt.Sprintf("%s?auth_token=%s", uploadURL, authToken)
-	// fmt.Println("Request URL:", url)
+	// Add necessary query parameters if required
+	// For example, you might need to include bucket information in the URL
+	url := fmt.Sprintf("%s?userID=%s&bucket=%s&filename=%s", uploadURL, userID, bucket, filename)
+	fmt.Println("Request URL:", url)
 
-	url := fmt.Sprintf("%s/%s", uploadURL, bucket)
-	fmt.Println("Uploading file to URL:", url)
-
-	req, err := http.NewRequest("POST", uploadURL, file)
+	req, err := http.NewRequest("POST", url, file)
 	if err != nil {
 		return "", err
 	}
-	// Optionally, you can set the Authorization header instead of using the query parameter
-	req.Header.Set("Authorization", "Bearer "+os.Getenv("SIA_API_AUTH"))
 
+	// Set the Authorization header using the base64-encoded admin credentials
+	req.Header.Set("Authorization", "Bearer "+authToken)
 	req.Header.Set("Content-Type", "application/octet-stream")
 
 	// Use a custom HTTP client to ignore SSL verification (not recommended for production)
@@ -104,5 +65,5 @@ func UploadToSia(file multipart.File, userID, bucket, filename string) (string, 
 		return "", fmt.Errorf("failed to upload to Sia: %s", body)
 	}
 
-	return uploadURL, nil
+	return url, nil
 }

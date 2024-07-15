@@ -3,8 +3,10 @@ package controllers
 import (
 	"context"
 	"fmt"
+	"io"
 	"mintyplex-api/internal/models"
 	"mintyplex-api/internal/utils"
+	"net/http"
 	"os"
 	"time"
 
@@ -323,5 +325,34 @@ func UpdateProduct(c *fiber.Ctx) error {
 		"status":  "success",
 		"message": "Product updated successfully",
 		"data":    existingProduct,
+	})
+}
+
+func Download(c *fiber.Ctx) error {
+
+	url := "download.mintyplex.com/api/worker/objects/?offset=0&limit=2&prefix=H6V"
+	method := "GET"
+
+	client := &http.Client{}
+	req, err := http.NewRequest(method, url, nil)
+
+	if err != nil {
+		fmt.Println(err)
+	}
+	res, err := client.Do(req)
+	if err != nil {
+		fmt.Println(err)
+	}
+	defer res.Body.Close()
+
+	body, err := io.ReadAll(res.Body)
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	return c.Status(200).JSON(fiber.Map{
+		"status":  "success",
+		"message": "Products fetched successfully",
+		"data":    body,
 	})
 }
