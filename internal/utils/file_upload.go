@@ -2,6 +2,7 @@ package utils
 
 import (
 	"crypto/tls"
+	"encoding/json"
 	"fmt"
 	"io"
 	"mime/multipart"
@@ -9,6 +10,11 @@ import (
 	"os"
 	"strings"
 )
+
+type SiaUploadResponse struct {
+	CID string `json:"cid"`
+	// Add other fields if necessary
+}
 
 func DetermineFileType(filename string) string {
 	switch {
@@ -23,31 +29,24 @@ func DetermineFileType(filename string) string {
 	}
 }
 
-func UploadToSia(file multipart.File, userID, bucket, filename string) (string, error) {
-	uploadURL := "https://upload.mintyplex.com/s5/upload"
+func UploadToSia(file multipart.File, userID, bucket, filename string) (SiaUploadResponse, error) {
+	var siaResp SiaUploadResponse
+
+	uploadURL := "https://upload.mintyplex.com/s5/upload/"
 	authToken := os.Getenv("SIA_API_AUTH")
-	fmt.Println(authToken)
 
 	if authToken == "" {
-		return "", fmt.Errorf("SIA_API_AUTH environment variable is not set")
+		return siaResp, fmt.Errorf("SIA_AUTH_TOKEN environment variable is not set")
 	}
-
-	// Create the request
-	// Add necessary query parameters if required
-	// For example, you might need to include bucket information in the URL
-	url := fmt.Sprintf("%s?userID=%s&bucket=%s&filename=%s", uploadURL, userID, bucket, filename)
-	fmt.Println("Request URL:", url)
 
 	req, err := http.NewRequest("POST", uploadURL, file)
 	if err != nil {
-		return "", err
+		return siaResp, err
 	}
 
-	// Set the Authorization header using the base64-encoded admin credentials
 	req.Header.Set("Authorization", "Bearer "+authToken)
 	req.Header.Set("Content-Type", "application/octet-stream")
 
-	// Use a custom HTTP client to ignore SSL verification (not recommended for production)
 	client := &http.Client{
 		Transport: &http.Transport{
 			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
@@ -56,14 +55,20 @@ func UploadToSia(file multipart.File, userID, bucket, filename string) (string, 
 
 	res, err := client.Do(req)
 	if err != nil {
-		return "", err
+		return siaResp, err
 	}
 	defer res.Body.Close()
 
 	if res.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(res.Body)
-		return "", fmt.Errorf("failed to upload to Sia: %s", body)
+		return siaResp, fmt.Errorf("failed to upload to Sia: %s", body)
 	}
 
-	return url, nil
+	// Decode the JSON response
+	err = json.NewDecoder(res.Body).Decode(&siaResp)
+	if err != nil {
+		return siaResp, fmt.Errorf("failed to decode Sia response: %w", err)
+	}
+
+	return siaResp, nil
 }

@@ -20,16 +20,10 @@ import (
 )
 
 func AddProduct(c *fiber.Ctx) error {
-	// Get user ID from params
 	user := c.Params("id")
-
-	// Initiate db instance
 	db := c.Locals("db").(*mongo.Database)
-
-	// Initiate validator for fields
 	validate := validator.New()
 
-	// Parse request to model
 	addProd := &models.AddProduct{}
 	if err := c.BodyParser(addProd); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
@@ -38,7 +32,6 @@ func AddProduct(c *fiber.Ctx) error {
 		})
 	}
 
-	// Validate request data
 	if err := validate.Struct(addProd); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error":   true,
@@ -56,7 +49,6 @@ func AddProduct(c *fiber.Ctx) error {
 		})
 	}
 
-	// Upload image to Cloudinary
 	files := form.File["image"]
 	var imageURL string
 	if len(files) > 0 {
@@ -91,9 +83,9 @@ func AddProduct(c *fiber.Ctx) error {
 		imageURL = resp.SecureURL
 	}
 
-	// Upload other files to Sia
 	fileSia := form.File["file"]
-	var siaURL string
+	var siaResp utils.SiaUploadResponse
+	var downloadURL string
 	if len(fileSia) > 0 {
 		for _, fileHead := range fileSia {
 			file, err := fileHead.Open()
@@ -105,14 +97,9 @@ func AddProduct(c *fiber.Ctx) error {
 			}
 			defer file.Close()
 
-			// Determine the file type based on the file extension
 			fileType := utils.DetermineFileType(fileHead.Filename)
 
 			var bucket string
-			// bucket = fmt.Sprintf("%s-bucket", fileType)
-
-			// Set product and bucket manually for now
-
 			switch fileType {
 			case "audio":
 				bucket = "audio-bucket"
@@ -124,13 +111,16 @@ func AddProduct(c *fiber.Ctx) error {
 				bucket = "default-bucket"
 			}
 
-			siaURL, err = utils.UploadToSia(file, user, bucket, fileHead.Filename)
+			siaResp, err = utils.UploadToSia(file, user, bucket, fileHead.Filename)
 			if err != nil {
 				return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 					"error":   true,
 					"message": "Failed to upload file to Sia renterd: " + err.Error(),
 				})
 			}
+
+			// Construct the download URL
+			downloadURL = fmt.Sprintf("https://upload.mintyplex.com/s5/blob/%s", siaResp.CID)
 		}
 	}
 
@@ -146,7 +136,8 @@ func AddProduct(c *fiber.Ctx) error {
 		Quantity:    addProd.Quantity,
 		Tags:        addProd.Tags,
 		CoverImage:  imageURL,
-		SiaURL:      siaURL,
+		RenterdFileHash:      siaResp.CID,
+		DownloadURL: downloadURL, // Store the download URL
 		CreatedAt:   time.Now(),
 		UpdatedAt:   time.Now(),
 	}
@@ -160,9 +151,10 @@ func AddProduct(c *fiber.Ctx) error {
 	}
 
 	return c.Status(fiber.StatusCreated).JSON(fiber.Map{
-		"error":   false,
-		"message": "Product Created successfully",
-		"product": response.InsertedID,
+		"error":        false,
+		"message":      "Product Created successfully",
+		"product":      response.InsertedID,
+		"sia_response": siaResp,
 	})
 }
 

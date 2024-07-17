@@ -7,31 +7,33 @@ import (
 )
 
 type AddProduct struct {
-	CoverImage  string    `bson:"image"`
-	Name        string    `bson:"name"`
-	Price       float64   `bson:"price"`
-	Discount    float64   `bson:"discount"`
-	Description string    `bson:"description"`
-	Categories  string    `bson:"categories"`
-	Quantity    int       `bson:"quantity"`
-	Tags        []string  `bson:"tags"`
-	SiaURL      string    `bson:"sia_url"`
-	CreatedAt   time.Time `bson:"created_at"`
-	UpdatedAt   time.Time `bson:"updated_at"`
+	CoverImage      string    `bson:"image"`
+	Name            string    `bson:"name"`
+	Price           float64   `bson:"price"`
+	Discount        float64   `bson:"discount"`
+	Description     string    `bson:"description"`
+	Categories      string    `bson:"categories"`
+	Quantity        int       `bson:"quantity"`
+	Tags            []string  `bson:"tags"`
+	RenterdFileHash string    `bson:"renterd_file_hash"`
+	DownloadURL     string    `bson:"download_url"`
+	CreatedAt       time.Time `bson:"created_at"`
+	UpdatedAt       time.Time `bson:"updated_at"`
 }
 
 type Product struct {
-	ID          primitive.ObjectID `bson:"_id,omitempty"`
-	UserId      string             `bson:"user_id,omitempty"`
-	CoverImage  string             `bson:"image"`
-	Name        string             `bson:"name"`
-	Price       float64            `bson:"price"`
-	Discount    float64            `bson:"discount"`
-	Description string             `bson:"description"`
-	Categories  string             `bson:"categories"`
-	Quantity    int                `bson:"quantity"`
-	Tags        []string           `bson:"tags"`
-	SiaURL      string             `bson:"sia_url"`
-	CreatedAt   time.Time          `bson:"created_at"`
-	UpdatedAt   time.Time          `bson:"updated_at"`
+	ID              primitive.ObjectID `bson:"_id,omitempty"`
+	UserId          string             `bson:"user_id,omitempty"`
+	CoverImage      string             `bson:"image"`
+	Name            string             `bson:"name"`
+	Price           float64            `bson:"price"`
+	Discount        float64            `bson:"discount"`
+	Description     string             `bson:"description"`
+	Categories      string             `bson:"categories"`
+	Quantity        int                `bson:"quantity"`
+	Tags            []string           `bson:"tags"`
+	RenterdFileHash string             `bson:"renterd_file_hash"`
+	DownloadURL     string             `bson:"download_url"`
+	CreatedAt       time.Time          `bson:"created_at"`
+	UpdatedAt       time.Time          `bson:"updated_at"`
 }
