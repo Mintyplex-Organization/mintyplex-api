@@ -34,6 +34,14 @@ type Product struct {
 	Tags            []string           `bson:"tags"`
 	RenterdFileHash string             `bson:"renterd_file_hash"`
 	DownloadURL     string             `bson:"download_url"`
+	Metadata        []FileMetadata     `bson:"metadata"`
 	CreatedAt       time.Time          `bson:"created_at"`
 	UpdatedAt       time.Time          `bson:"updated_at"`
+}
+
+type FileMetadata struct {
+	Filename string `bson:"filename"`
+	FileType string `bson:"file_type"`
+	Size     int64  `bson:"size"`
+	CID      string `bson:"cid"`
 }

@@ -86,6 +86,8 @@ func AddProduct(c *fiber.Ctx) error {
 	fileSia := form.File["file"]
 	var siaResp utils.SiaUploadResponse
 	var downloadURL string
+	var metadata []models.FileMetadata
+
 	if len(fileSia) > 0 {
 		for _, fileHead := range fileSia {
 			file, err := fileHead.Open()
@@ -111,7 +113,7 @@ func AddProduct(c *fiber.Ctx) error {
 				bucket = "default-bucket"
 			}
 
-			siaResp, err = utils.UploadToSia(file, user, bucket, fileHead.Filename)
+			siaResp, err = utils.UploadToSia(file, fileHead.Size, user, bucket, fileHead.Filename)
 			if err != nil {
 				return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 					"error":   true,
@@ -121,25 +123,32 @@ func AddProduct(c *fiber.Ctx) error {
 
 			// Construct the download URL
 			downloadURL = fmt.Sprintf("https://upload.mintyplex.com/s5/blob/%s", siaResp.CID)
+			metadata = append(metadata, models.FileMetadata{
+				Filename: siaResp.FileName,
+				FileType: siaResp.FileType,
+				Size:     siaResp.Size,
+				CID:      siaResp.CID,
+			})
 		}
 	}
 
 	productID := primitive.NewObjectID()
 	product := &models.Product{
-		ID:          productID,
-		UserId:      user,
-		Name:        addProd.Name,
-		Price:       addProd.Price,
-		Discount:    addProd.Discount,
-		Description: addProd.Description,
-		Categories:  addProd.Categories,
-		Quantity:    addProd.Quantity,
-		Tags:        addProd.Tags,
-		CoverImage:  imageURL,
-		RenterdFileHash:      siaResp.CID,
-		DownloadURL: downloadURL, // Store the download URL
-		CreatedAt:   time.Now(),
-		UpdatedAt:   time.Now(),
+		ID:              productID,
+		UserId:          user,
+		Name:            addProd.Name,
+		Price:           addProd.Price,
+		Discount:        addProd.Discount,
+		Description:     addProd.Description,
+		Categories:      addProd.Categories,
+		Quantity:        addProd.Quantity,
+		Tags:            addProd.Tags,
+		CoverImage:      imageURL,
+		RenterdFileHash: siaResp.CID,
+		DownloadURL:     downloadURL, // Store the download URL
+		Metadata:        metadata,
+		CreatedAt:       time.Now(),
+		UpdatedAt:       time.Now(),
 	}
 
 	response, err := db.Collection(os.Getenv("PRODUCT_COLLECTION")).InsertOne(c.Context(), product)

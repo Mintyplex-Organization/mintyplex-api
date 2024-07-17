@@ -12,8 +12,10 @@ import (
 )
 
 type SiaUploadResponse struct {
-	CID string `json:"cid"`
-	// Add other fields if necessary
+	CID      string `json:"cid"`
+	FileName string `json:"filename"`
+	FileType string `json:"filetype"`
+	Size     int64  `json:"size"`
 }
 
 func DetermineFileType(filename string) string {
@@ -29,19 +31,19 @@ func DetermineFileType(filename string) string {
 	}
 }
 
-func UploadToSia(file multipart.File, userID, bucket, filename string) (SiaUploadResponse, error) {
-	var siaResp SiaUploadResponse
+func UploadToSia(file multipart.File, fileSize int64, userID, bucket, filename string) (SiaUploadResponse, error) {
+	// var siaResp SiaUploadResponse
 
 	uploadURL := "https://upload.mintyplex.com/s5/upload/"
 	authToken := os.Getenv("SIA_API_AUTH")
 
 	if authToken == "" {
-		return siaResp, fmt.Errorf("SIA_AUTH_TOKEN environment variable is not set")
+		return SiaUploadResponse{}, fmt.Errorf("SIA_AUTH_TOKEN environment variable is not set")
 	}
 
 	req, err := http.NewRequest("POST", uploadURL, file)
 	if err != nil {
-		return siaResp, err
+		return SiaUploadResponse{}, err
 	}
 
 	req.Header.Set("Authorization", "Bearer "+authToken)
@@ -55,20 +57,23 @@ func UploadToSia(file multipart.File, userID, bucket, filename string) (SiaUploa
 
 	res, err := client.Do(req)
 	if err != nil {
-		return siaResp, err
+		return SiaUploadResponse{}, err
 	}
 	defer res.Body.Close()
 
 	if res.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(res.Body)
-		return siaResp, fmt.Errorf("failed to upload to Sia: %s", body)
+		return SiaUploadResponse{}, fmt.Errorf("failed to upload to Sia: %s", body)
 	}
 
-	// Decode the JSON response
-	err = json.NewDecoder(res.Body).Decode(&siaResp)
-	if err != nil {
-		return siaResp, fmt.Errorf("failed to decode Sia response: %w", err)
+	var siaResponse SiaUploadResponse
+	if err := json.NewDecoder(res.Body).Decode(&siaResponse); err != nil {
+		return SiaUploadResponse{}, fmt.Errorf("fialed to parse response: %s", err)
 	}
 
-	return siaResp, nil
+	siaResponse.FileName = filename
+	siaResponse.FileType = DetermineFileType(filename)
+	siaResponse.Size = fileSize
+
+	return siaResponse, nil
 }
