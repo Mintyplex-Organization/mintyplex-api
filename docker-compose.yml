@@ -1,0 +1,23 @@
+version: '3.8'
+
+services:
+  appx:
+    container_name: appx
+    build: .
+    environment:
+      DATABASE_URL: ${MONGODB_SRV_RECORD}
+    ports:
+      - "8081:8081"
+    depends_on:
+      - mongo
+
+  mongo:
+    image: mongo:latest
+    container_name: mongo
+    ports:
+      - "27018:27017"
+    volumes:
+      - mongo_data:/data/db
+
+volumes:
+  mongo_data:
