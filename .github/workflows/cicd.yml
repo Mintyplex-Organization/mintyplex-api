@@ -46,10 +46,10 @@ jobs:
     runs-on: self-hosted
     steps:
       - name: Pull Docker image
-        run: docker pull m1ntyplex/base-app:latest
+        run: sudo docker pull m1ntyplex/base-app:latest
       
       - name: Delete old container
-        run: docker rm -f base-app-container || true
+        run: sudo docker rm -f base-app-container || true
       
       - name: Run Docker container
-        run: docker run -d -p 8081:8081 --name base-app-container m1ntyplex/base-app:latest
+        run: sudo docker run -d -p 8081:8081 --name base-app-container m1ntyplex/base-app:latest
