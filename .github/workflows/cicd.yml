@@ -1,0 +1,55 @@
+name: Mintyplex Application
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Source
+        uses: actions/checkout@v4
+      
+      - name: Create .env file from GitHub Secrets
+        run: |
+          echo "MONGODB_SRV_RECORD=${{ secrets.MONGODB_SRV_RECORD }}" >> .env
+          echo "BASE_URL=${{ secrets.BASE_URL }}" >> .env
+          echo "MONGODB_DATABASE=${{ secrets.MONGODB_DATABASE }}" >> .env
+          echo "USER_COLLECTION=${{ secrets.USER_COLLECTION }}" >> .env
+          echo "PRODUCT_COLLECTION=${{ secrets.PRODUCT_COLLECTION }}" >> .env
+          echo "USERNAME_COLLECTION=${{ secrets.USERNAME_COLLECTION }}" >> .env
+          echo "AVATAR_BUCKET=${{ secrets.AVATAR_BUCKET }}" >> .env
+          echo "AVATAR_COLLECTION=${{ secrets.AVATAR_COLLECTION }}" >> .env
+          echo "COVER_BUCKET=${{ secrets.COVER_BUCKET }}" >> .env
+          echo "COVER_COLLECTION=${{ secrets.COVER_COLLECTION }}" >> .env
+          echo "JWT_SECRET_KEY=${{ secrets.JWT_SECRET_KEY }}" >> .env
+          echo "CLOUDINARY_URL=${{ secrets.CLOUDINARY_URL }}" >> .env
+          echo "CLOUDINARY_API_SECRET=${{ secrets.CLOUDINARY_API_SECRET }}" >> .env
+          echo "CLOUDINARY_CLOUD_NAME=${{ secrets.CLOUDINARY_CLOUD_NAME }}" >> .env
+          echo "CLOUDINARY_API_KEY=${{ secrets.CLOUDINARY_API_KEY }}" >> .env
+          echo "SIA_SERVER=${{ secrets.SIA_SERVER }}" >> .env
+          echo "SIA_API_AUTH=${{ secrets.SIA_API_AUTH }}" >> .env
+      
+      - name: Login to Docker Hub
+        run: docker login -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_PASSWORD }}
+      
+      - name: Build Docker image
+        run: docker build -t m1ntyplex/base-app .
+      
+      - name: Push image to Docker Hub
+        run: docker push m1ntyplex/base-app:latest
+
+  deploy:
+    needs: build
+    runs-on: self-hosted
+    steps:
+      - name: Pull Docker image
+        run: docker pull m1ntyplex/base-app:latest
+      
+      - name: Delete old container
+        run: docker rm -f base-app-container || true
+      
+      - name: Run Docker container
+        run: docker run -d -p 8081:8081 --name base-app-container m1ntyplex/base-app:latest
