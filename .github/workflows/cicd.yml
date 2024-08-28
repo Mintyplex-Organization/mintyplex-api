@@ -53,3 +53,6 @@ jobs:
       
       - name: Run Docker container
         run: sudo docker run -d -p 8081:8081 --name base-app-container m1ntyplex/base-app:latest
+
+
+

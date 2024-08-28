@@ -38,11 +38,13 @@ func UploadToSia(file multipart.File, fileSize int64, userID, bucket, filename s
 	authToken := os.Getenv("SIA_API_AUTH")
 
 	if authToken == "" {
+		fmt.Println("missing variable")
 		return SiaUploadResponse{}, fmt.Errorf("SIA_AUTH_TOKEN environment variable is not set")
 	}
 
 	req, err := http.NewRequest("POST", uploadURL, file)
 	if err != nil {
+		fmt.Println("bad request")
 		return SiaUploadResponse{}, err
 	}
 
@@ -63,12 +65,13 @@ func UploadToSia(file multipart.File, fileSize int64, userID, bucket, filename s
 
 	if res.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(res.Body)
+		fmt.Printf("Error response body: %s\n", body) // Log the error body for debugging
 		return SiaUploadResponse{}, fmt.Errorf("failed to upload to Sia: %s", body)
 	}
 
 	var siaResponse SiaUploadResponse
 	if err := json.NewDecoder(res.Body).Decode(&siaResponse); err != nil {
-		return SiaUploadResponse{}, fmt.Errorf("fialed to parse response: %s", err)
+		return SiaUploadResponse{}, fmt.Errorf("fialed to parse response: %s",err, err.Error())
 	}
 
 	siaResponse.FileName = filename

@@ -115,6 +115,8 @@ func AddProduct(c *fiber.Ctx) error {
 
 			siaResp, err = utils.UploadToSia(file, fileHead.Size, user, bucket, fileHead.Filename)
 			if err != nil {
+				fmt.Println(err.Error())
+				fmt.Println(err)
 				return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 					"error":   true,
 					"message": "Failed to upload file to Sia renterd: " + err.Error(),
