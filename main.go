@@ -17,7 +17,7 @@ func main() {
 	middleware.CorsMiddleware(app)
 
 	app.Get("/", func(c *fiber.Ctx) error {
-		return c.SendString("Plexer Baby")
+		return c.SendString("Plexer SZN")
 	})
 
 	db := database.MongoClient()
