@@ -147,7 +147,7 @@ func AddProduct(c *fiber.Ctx) error {
 				Filename: fileHead.Filename,
 				FileType: fileType,
 				Size:     fileHead.Size,
-				CID:      downloadURL,
+				// CID:      downloadURL,
 			})
 		}
 	}
