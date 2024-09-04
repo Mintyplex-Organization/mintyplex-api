@@ -25,22 +25,6 @@ const (
 var Sess = ClientAWS()
 
 func ClientAWS() *session.Session {
-	// region := AWS_S3_REGION
-	// if region == "US" || region == "" {
-	//     region = "us-east-1"
-	// }
-	// fmt.Println("region is", region)
-
-	// sess, err := session.NewSession(
-	// 	&aws.Config{
-	// 		// Region: aws.String(os.Getenv("AWS_S3_REGION")),
-	// 		Region: aws.String(region),
-	// 	},
-	// )
-	// if err != nil {
-	// 	panic(err)
-	// }
-	// return sess
 	sess, err := session.NewSession(&aws.Config{
 		Region: aws.String("us-east-1"), // Ensure this is correct
 		LogLevel: aws.LogLevel(aws.LogDebugWithHTTPBody),
