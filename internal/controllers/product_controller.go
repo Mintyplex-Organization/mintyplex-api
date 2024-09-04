@@ -4,12 +4,15 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"mintyplex-api/internal/database"
 	"mintyplex-api/internal/models"
 	"mintyplex-api/internal/utils"
 	"net/http"
 	"os"
 	"time"
 
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/cloudinary/cloudinary-go/v2"
 	"github.com/cloudinary/cloudinary-go/v2/api/uploader"
 	"github.com/go-playground/validator/v10"
@@ -83,13 +86,14 @@ func AddProduct(c *fiber.Ctx) error {
 		imageURL = resp.SecureURL
 	}
 
-	fileSia := form.File["file"]
-	var siaResp utils.SiaUploadResponse
+	// Handle file upload to AWS S3
+
+	fileS3 := form.File["file"]
 	var downloadURL string
 	var metadata []models.FileMetadata
 
-	if len(fileSia) > 0 {
-		for _, fileHead := range fileSia {
+	if len(fileS3) > 0 {
+		for _, fileHead := range fileS3 {
 			file, err := fileHead.Open()
 			if err != nil {
 				return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
@@ -101,56 +105,70 @@ func AddProduct(c *fiber.Ctx) error {
 
 			fileType := utils.DetermineFileType(fileHead.Filename)
 
-			var bucket string
-			switch fileType {
-			case "audio":
-				bucket = "audio-bucket"
-			case "ebook":
-				bucket = "ebook-bucket"
-			case "image":
-				bucket = "image-bucket"
-			default:
-				bucket = "default-bucket"
-			}
+			var buckt string
+			// switch fileType {
+			// case "audio":
+			// 	bucket = "audio-bucket"
+			// case "ebook":
+			// 	bucket = "ebook-bucket"
+			// case "image":
+			// 	bucket = "image-bucket"
+			// default:
+			// 	bucket = "default-bucket"
+			// }
 
-			siaResp, err = utils.UploadToSia(file, fileHead.Size, user, bucket, fileHead.Filename)
+			sess := database.ClientAWS() // Assuming this initializes the AWS session
+			// uploader := s3manager.NewUploader(sess)
+
+			upldr := s3.New(sess)
+
+			buckt = "bucketregion1"
+
+			_, err = upldr.PutObject(&s3.PutObjectInput{
+				Bucket: aws.String(buckt),
+				Key:    aws.String(fileHead.Filename),
+				Body:   file,
+			})
+
+			// uploadResult, err := uploader.Upload(&s3manager.UploadInput{
+			// 	Bucket: aws.String(buckt),            // Bucket to be used
+			// 	Key:    aws.String(fileHead.Filename), // Name of the file to be saved
+			// 	Body:   file,                          // File
+			// })
 			if err != nil {
-				fmt.Println(err.Error())
-				fmt.Println(err)
 				return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 					"error":   true,
-					"message": "Failed to upload file to Sia renterd: " + err.Error(),
+					"message": "Failed to upload file to S3: " + err.Error(),
 				})
 			}
-
 			// Construct the download URL
-			downloadURL = fmt.Sprintf("https://upload.mintyplex.com/s5/blob/%s", siaResp.CID)
+			// downloadURL = uploadResult.Location
 			metadata = append(metadata, models.FileMetadata{
-				Filename: siaResp.FileName,
-				FileType: siaResp.FileType,
-				Size:     siaResp.Size,
-				CID:      siaResp.CID,
+				Filename: fileHead.Filename,
+				FileType: fileType,
+				Size:     fileHead.Size,
+				CID:      downloadURL,
 			})
 		}
 	}
 
 	productID := primitive.NewObjectID()
 	product := &models.Product{
-		ID:              productID,
-		UserId:          user,
-		Name:            addProd.Name,
-		Price:           addProd.Price,
-		Discount:        addProd.Discount,
-		Description:     addProd.Description,
-		Categories:      addProd.Categories,
-		Quantity:        addProd.Quantity,
-		Tags:            addProd.Tags,
-		CoverImage:      imageURL,
-		RenterdFileHash: siaResp.CID,
-		DownloadURL:     downloadURL, // Store the download URL
-		Metadata:        metadata,
-		CreatedAt:       time.Now(),
-		UpdatedAt:       time.Now(),
+		ID:          productID,
+		UserId:      user,
+		Name:        addProd.Name,
+		Price:       addProd.Price,
+		Discount:    addProd.Discount,
+		Description: addProd.Description,
+		Categories:  addProd.Categories,
+		Quantity:    addProd.Quantity,
+		Tags:        addProd.Tags,
+		CoverImage:  imageURL,
+		// RenterdFileHash: siaResp.CID,
+		DownloadURL: downloadURL, // Store the download URL
+		Metadata:    metadata,
+		CreatedAt:   time.Now(),
+		UpdatedAt:   time.Now(),
 	}
 
 	response, err := db.Collection(os.Getenv("PRODUCT_COLLECTION")).InsertOne(c.Context(), product)
@@ -162,10 +180,10 @@ func AddProduct(c *fiber.Ctx) error {
 	}
 
 	return c.Status(fiber.StatusCreated).JSON(fiber.Map{
-		"error":        false,
-		"message":      "Product Created successfully",
-		"product":      response.InsertedID,
-		"sia_response": siaResp,
+		"error":   false,
+		"message": "Product Created successfully",
+		"product": response.InsertedID,
+		// "sia_response": siaResp,
 	})
 }
 

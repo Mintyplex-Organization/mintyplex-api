@@ -9,6 +9,7 @@ import (
 )
 
 func main() {
+	// fmt.Println("this is the region: ", os.Getenv("AWS_S3_REGION"))
 
 	app := fiber.New(fiber.Config{
 		BodyLimit: 200 * 1024 * 1024, // this is the default limit of 4MB
