@@ -84,7 +84,7 @@ func DoTier1(c *fiber.Ctx) error {
 	}
 
 	if avatarURL == "" {
-		avatarURL = fmt.Sprintf("%s/api/v1/user/avatar/default.png", os.Getenv("BASE_URL"))
+		avatarURL = fmt.Sprintf("https://res.cloudinary.com/dwrzmvyvv/image/upload/v1725623663/l7zjlujnhwzcrp3j3ctn.jpg")
 	}
 
 	fmt.Println("doTier.XLink - ", dotier1.XLink)
