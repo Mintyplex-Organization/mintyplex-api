@@ -43,6 +43,27 @@ type UserResponse struct {
 	UpdatedAt time.Time          `json:"updated_at" bson:"updated_at"`
 }
 
+type DBResponse struct {
+	ID              primitive.ObjectID `json:"id" bson:"_id"`
+	Name            string             `json:"name" bson:"name"`
+	Email           string             `json:"email" bson:"email"`
+	Password        string             `json:"password" bson:"password"`
+	PasswordConfirm string             `json:"passwordConfirm,omitempty" bson:"passwordConfirm,omitempty"`
+	Verified        bool               `json:"verified" bson:"verified"`
+	CreatedAt       time.Time          `json:"created_at" bson:"created_at"`
+	UpdatedAt       time.Time          `json:"updated_at" bson:"updated_at"`
+}
+
+func FilteredResponse(user *DBResponse) UserResponse {
+	return UserResponse{
+		ID:        user.ID,
+		Email:     user.Email,
+		Name:      user.Name,
+		CreatedAt: user.CreatedAt,
+		UpdatedAt: user.UpdatedAt,
+	}
+}
+
 type DoTier1 struct {
 	WalletAddress string `json:"wallet_address" bson:"_id" validate:"required"`
 	XLink         string `json:"x_link" validate:"required"`

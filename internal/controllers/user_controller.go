@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"mintyplex-api/internal/models"
+	"mintyplex-api/internal/services"
 	"os"
 	"time"
 
@@ -16,6 +17,14 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
+
+type UserController struct {
+	userService services.UserService
+}
+
+func NewUserController(userService services.UserService) UserController {
+	return UserController{userService}
+}
 
 func DoTier1(c *fiber.Ctx) error {
 	db := c.Locals("db").(*mongo.Database)
@@ -113,7 +122,18 @@ func DoTier1(c *fiber.Ctx) error {
 
 }
 
-func UserProfile(c *fiber.Ctx) error {
+func (uc *UserController) UserProfile(c *fiber.Ctx) error {
+	currentUser := c.Locals("currentUser").(*models.UserResponse)
+
+	return c.JSON(fiber.Map{
+		"status": "success",
+		"data": fiber.Map{
+			"user": models.UserResponse(*currentUser),
+		},
+	})
+}
+
+func UUserProfile(c *fiber.Ctx) error {
 	walletAddress := c.Params("id")
 
 	db := c.Locals("db").(*mongo.Database)

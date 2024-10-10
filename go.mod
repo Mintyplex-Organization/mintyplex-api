@@ -9,6 +9,7 @@ require (
 	github.com/go-playground/validator/v10 v10.19.0
 	github.com/gofiber/fiber/v2 v2.52.4
 	github.com/gofiber/jwt/v3 v3.3.10
+	github.com/golang-jwt/jwt v3.2.2+incompatible
 	github.com/golang-jwt/jwt/v5 v5.2.1
 	github.com/joho/godotenv v1.5.1
 	go.mongodb.org/mongo-driver v1.14.0
