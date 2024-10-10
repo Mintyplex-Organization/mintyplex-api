@@ -20,8 +20,8 @@ import (
 )
 
 var (
-	server      *fiber.App
-	ctx         context.Context
+	// server      *fiber.App
+	// ctx         context.Context
 	mongoclient *mongo.Client
 	db          *mongo.Database
 
@@ -97,6 +97,7 @@ func main() {
 
 	AuthRouteController.AuthRoute(app, userService)
 	UserRouteController.UserRoutes(app, userService)
+	SessionRouteController.SessionRoute(app)
 
 
 	log.Fatal(app.Listen(":8081"))
