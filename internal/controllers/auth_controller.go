@@ -227,7 +227,7 @@ func (ac *AuthController) GoogleAuth(c *fiber.Ctx) error {
 	}
 
 	createdAt := time.Now()
-	resBody := *&models.UpdateDBUser{
+	resBody := &models.UpdateDBUser{
 		Email:     user.Email,
 		Name:      user.Name,
 		Provider:  "google",
@@ -236,7 +236,7 @@ func (ac *AuthController) GoogleAuth(c *fiber.Ctx) error {
 		UpdatedAt: createdAt,
 	}
 
-	updatedUser, err := ac.userService.UpsertUser(user.Email, &resBody)
+	updatedUser, err := ac.userService.UpsertUser(user.Email, resBody)
 	if err != nil {
 		return c.Status(fiber.StatusBadGateway).JSON(fiber.Map{
 			"status":  "fail",

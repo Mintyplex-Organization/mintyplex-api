@@ -33,6 +33,8 @@ var (
 	authService         services.AuthService
 	AuthController      controllers.AuthController
 	AuthRouteController routes.AuthRouteController
+
+	SessionRouteController routes.SessionRouteController
 )
 
 func init() {
@@ -62,6 +64,15 @@ func init() {
 
 	mongoclient = client
 	db = client.Database(os.Getenv("MONGODB_DATABASE"))
+
+	userService = services.NewUserServiceImpl(authCollection, ctx)
+	authService = services.NewAuthService(authCollection, ctx)
+	AuthController = controllers.NewAuthController(authService, userService)
+	AuthRouteController = routes.NewAuthRouteController(AuthController)
+	SessionRouteController = routes.NewSessionRouteController(AuthController)
+
+	userController = controllers.NewUserController(userService)
+	UserRouteController = routes.NewRouteUserController(userController)
 }
 
 func main() {
